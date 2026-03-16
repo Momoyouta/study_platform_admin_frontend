@@ -15,7 +15,7 @@ const instance = axios.create({
 // 请求拦截器：自动注入 token
 instance.interceptors.request.use(
     (config) => {
-        const token = '123'
+        const token = localStorage.getItem('access_token')
         if (token) {
             config.headers['Authorization'] = `Bearer ${token}`;
         }
@@ -34,7 +34,7 @@ instance.interceptors.response.use(
     },
     (error) => {
         const status = error.response?.status;
-        const msg = error.response?.data?.message || '请求失败，请稍后重试';
+        const msg = error.response?.data?.msg || '请求失败，请稍后重试';
 
         if (status === 401) {
             // 未授权：清除 token 并跳转到登录页
