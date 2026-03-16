@@ -23,6 +23,7 @@ context: |
   - 使用 createBrowserRouter 进行路由管理，路由配置集中在 src/router/route.jsx
   - 状态管理统一使用 MobX，存储在 src/store 目录下
   - 样式变量定义在 src/theme/variables.less
+  - 后端返回的数据结构统一为 { code: number, msg: string, data: any }
 
 # 按成品规则 (可选)
 # 为特定成品添加自定义规则。

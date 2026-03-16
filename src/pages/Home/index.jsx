@@ -9,7 +9,8 @@ import http from "@/http/http.js";
 
 const Home = observer(() => {
   const test = async () => {
-      await http.get('/user/roles/1')
+    console.log('Testing API call with token:', localStorage.getItem('access_token'));
+      await http.post('/auth/jwtAuth',{accessToken: localStorage.getItem('access_token')})
           .then(res => console.log(res))
           .catch(err => console.log(err));
   }

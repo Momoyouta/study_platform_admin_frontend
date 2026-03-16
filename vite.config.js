@@ -27,7 +27,7 @@ export default defineConfig(({ mode }) => {
     },
     envDir: './src/env',
     server: {
-        port: 8080,
+        port: 8081,
         proxy: {
             // 将所有以 /api 开头的请求转发到目标服务器
             '/api': {
