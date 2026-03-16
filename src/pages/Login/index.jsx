@@ -17,11 +17,10 @@ const Login = observer(() => {
             });
             
             // 假设接口返回数据包含 access_token
-            if (res && res.data?.token) {
+            if (res && res.data) {
                 Store.UserStore.setToken(res.data.token);
                 // 如果有用户信息也可以在此设置
-                // Store.UserStore.setUserInfo(res.user);
-                
+                Store.UserStore.setUserBaseInfo(res.data.baseUserInfo);
                 message.success('登录成功');
                 navigate('/');
             } else {
