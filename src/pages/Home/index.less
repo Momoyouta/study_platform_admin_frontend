@@ -1,0 +1,49 @@
+.home-layout {
+    min-height: 100vh;
+    height: 100vh;
+}
+
+.home-sider {
+    background-color: #6b5b7b !important;
+    overflow: hidden;
+    height: 100vh;
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 10;
+}
+
+.home-sider .ant-layout-sider-children {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+}
+
+.home-main {
+    margin-left: 160px;
+    min-height: 100vh;
+}
+
+.home-header {
+    padding: 0 !important;
+    height: 48px !important;
+    line-height: 48px !important;
+    background-color: #ffffff !important;
+    position: sticky;
+    top: 0;
+    z-index: 5;
+}
+
+.home-content {
+    background-color: #f0f0f0;
+    min-height: calc(100vh - 48px);
+}
+
+.home-content-inner {
+    margin: 20px;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 4px;
+    min-height: calc(100vh - 48px - 40px);
+}

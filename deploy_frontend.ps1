@@ -1,4 +1,4 @@
-# study_platform_frontend/deploy_frontend.ps1
+# study_platform_admin_frontend/deploy_frontend.ps1
 $VM_USER = "root"
 $VM_IP = "192.168.52.128"
 $REMOTE_BASE = "/home/study_platform_project"
@@ -13,17 +13,17 @@ tar -czf dist.tar.gz dist
 
 Write-Host ">>> Step 3: Syncing to VM..." -ForegroundColor Cyan
 # 1. 确保父级目录存在
-ssh $VM_USER@$VM_IP "mkdir -p $REMOTE_BASE/vite-app $REMOTE_BASE/nginx"
+ssh $VM_USER@$VM_IP "mkdir -p $REMOTE_BASE/vite-admin-app $REMOTE_BASE/nginx"
 
 # 2. 传输压缩包
-scp dist.tar.gz "$VM_USER@$VM_IP`:$REMOTE_BASE/vite-app/"
+scp dist.tar.gz "$VM_USER@$VM_IP`:$REMOTE_BASE/vite-admin-app/"
 
 # 3. 远程解压并清理
 # -C 表示切换到目录，--strip-components=1 可以把 dist/ 前缀去掉直接解压内容到当前目录
-ssh $VM_USER@$VM_IP "cd $REMOTE_BASE/vite-app && rm -rf dist && mkdir dist && tar -xzf dist.tar.gz -C dist --strip-components=1 && rm dist.tar.gz"
+ssh $VM_USER@$VM_IP "cd $REMOTE_BASE/vite-admin-app && rm -rf dist && mkdir dist && tar -xzf dist.tar.gz -C dist --strip-components=1 && rm dist.tar.gz"
 
 # 4. 传输 nginx 配置
-scp "nginx.conf" "$VM_USER@$VM_IP`:$REMOTE_BASE/nginx/nginx.conf"
+scp "../study_platform_frontend/nginx.conf" "$VM_USER@$VM_IP`:$REMOTE_BASE/nginx/nginx.conf"
 
 Write-Host ">>> Step 4: Restarting Nginx container on VM..." -ForegroundColor Cyan
 ssh $VM_USER@$VM_IP "cd $REMOTE_BASE && docker-compose restart nginx"
