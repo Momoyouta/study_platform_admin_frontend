@@ -1,7 +1,7 @@
 import { observer } from 'mobx-react-lite';
-import { Form, Input, Select, Button, Table, Space, Tag, message, Tooltip, Modal } from 'antd';
+import { Form, Input, Select, Button, Table, Space, Tag, message, Modal } from 'antd';
 import { useState, useEffect } from 'react';
-import { getUserList, updateUserStatus } from '@/http/api.ts';
+import { getUserList, updateUserStatus, register } from '@/http/api.ts';
 import { RoleMap, SchoolStatusMap, RoleMapId } from '@/type/map.js';
 import Store from '@/store/index.ts';
 import moment from 'moment';
@@ -9,7 +9,7 @@ import './index.less';
 
 const { Option } = Select;
 
-const UserList = observer(() => {
+const PlatformAdminList = observer(() => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState([]);
@@ -20,6 +20,13 @@ const UserList = observer(() => {
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [editForm] = Form.useForm();
+
+    // 新增弹窗
+    const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+    const [createForm] = Form.useForm();
+
+    const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
+    const isRoot = currentUserRoles.includes('root');
 
     const fetchList = (pageParams = pagination, searchParams = form.getFieldsValue()) => {
         setLoading(true);
@@ -43,8 +50,8 @@ const UserList = observer(() => {
                 }
             })
             .catch(error => {
-                console.error('Failed to fetch user list', error);
-                message.error('获取用户列表失败');
+                console.error('Failed to fetch platform admin list', error);
+                message.error('获取列表失败');
             })
             .finally(() => {
                 setLoading(false);
@@ -71,27 +78,9 @@ const UserList = observer(() => {
         fetchList(newPagination);
     };
 
-    const canEditUser = (record) => {
-        const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
-        const isRoot = currentUserRoles.includes('root');
-        const isAdmin = currentUserRoles.includes('admin');
-        const targetRoles = record.role_id || record.userRoles || [];
-        const targetRolesArr = Array.isArray(targetRoles) ? targetRoles : [targetRoles];
-        const targetIsRoot = targetRolesArr.includes('root') || targetRolesArr.includes('1');
-        const targetIsAdmin = targetRolesArr.includes('admin') || targetRolesArr.includes('2');
-
-        if (isRoot) return true; // root 可以修改所有人
-        if (isAdmin) {
-            // admin 不能修改 root 和 其他 admin
-            if (targetIsRoot || targetIsAdmin) return false;
-            return true;
-        }
-        return false; // 普通人不能在这里修改
-    };
-
     const handleEdit = (record) => {
-        if (!canEditUser(record)) {
-            message.warning('您暂无权限修改该职级的用户信息！');
+        if (!isRoot && record.userRoles?.includes('root')) {
+            message.warning('您暂无权限修改超级管理员的信息！');
             return;
         }
         setEditingUser(record);
@@ -125,16 +114,32 @@ const UserList = observer(() => {
         });
     };
 
-    const handleStatusChange = (record, status) => {
-        const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
-        const isRoot = currentUserRoles.includes('root');
-        const targetIsRoot = record.userRoles?.includes('root');
+    const handleCreateOk = () => {
+        createForm.validateFields().then(values => {
+            const payload = {
+                ...values,
+                sex: values.sex === 1,
+                inviteCode: '000000', // 默认邀请码
+            };
+            register(payload)
+                .then(() => {
+                    message.success('创建成功');
+                    setIsCreateModalVisible(false);
+                    createForm.resetFields();
+                    fetchList();
+                })
+                .catch(err => {
+                    console.error('Create failed', err);
+                    message.error('创建失败');
+                });
+        });
+    };
 
-        if (!isRoot && targetIsRoot) {
-            message.error('普通平台管理员无权操作平台超级管理员账号！');
+    const handleStatusChange = (record, status) => {
+        if (!isRoot && record.userRoles?.includes('root')) {
+            message.error('无权操作超级管理员账号！');
             return;
         }
-
         updateUserStatus(record.id || record.userId, { status })
             .then(() => {
                 message.success('状态更新成功');
@@ -200,13 +205,6 @@ const UserList = observer(() => {
             },
         },
         {
-            title: '所属机构',
-            key: 'organization',
-            render: (_, record) => {
-                return record.organization
-            },
-        },
-        {
             title: '性别',
             dataIndex: 'sex',
             key: 'sex',
@@ -250,31 +248,31 @@ const UserList = observer(() => {
     ];
 
     return (
-        <div className="user-list-container">
+        <div className="list-container">
             <div className="search-wrapper">
-                <Form form={form} layout="inline" onFinish={onSearch} className="search-form">
+                <Form form={form} layout="inline" onFinish={onSearch} className="search-form" initialValues={{ role_id: RoleMapId.admin }}>
                     <Form.Item name="id" label="ID">
-                        <Input placeholder="请输入用户ID" allowClear />
+                        <Input placeholder="输入ID" allowClear />
                     </Form.Item>
                     <Form.Item name="name" label="姓名">
-                        <Input placeholder="请输入姓名" allowClear />
+                        <Input placeholder="输入姓名" allowClear />
                     </Form.Item>
                     <Form.Item name="phone" label="电话号">
-                        <Input placeholder="请输入电话号" allowClear />
+                        <Input placeholder="输入电话号" allowClear />
                     </Form.Item>
                     <Form.Item name="role_id" label="角色">
                         <Select placeholder="请选择角色" allowClear style={{ width: 160 }}>
-                            {Object.keys(RoleMap).map(key => (
-                                <Option key={key} value={RoleMapId[key]}>{RoleMap[key]}</Option>
-                            ))}
+                            <Option value={RoleMapId.root}>超级管理员</Option>
+                            <Option value={RoleMapId.admin}>平台管理员</Option>
                         </Select>
                     </Form.Item>
                     <Form.Item>
                         <Space>
-                            <Button type="primary" htmlType="submit">
-                                查询
-                            </Button>
+                            <Button type="primary" htmlType="submit">查询</Button>
                             <Button onClick={onReset}>重置</Button>
+                            {isRoot && (
+                                <Button type="default" onClick={() => setIsCreateModalVisible(true)}>新增平台管理员</Button>
+                            )}
                         </Space>
                     </Form.Item>
                 </Form>
@@ -299,7 +297,7 @@ const UserList = observer(() => {
             </div>
 
             <Modal
-                title="编辑用户信息"
+                title="编辑属性"
                 open={isModalVisible}
                 onOk={handleEditOk}
                 onCancel={() => setIsModalVisible(false)}
@@ -319,13 +317,43 @@ const UserList = observer(() => {
                     <Form.Item name="password" label="新密码" tooltip="如果不修改密码请留空">
                         <Input.Password placeholder="留空则不修改密码" />
                     </Form.Item>
-                    <div style={{ color: '#888', marginTop: '10px' }}>
-                        *注：ID、账号、手机号、角色、归属机构等关键信息不可通过普通编辑接口修改。
-                    </div>
+                </Form>
+            </Modal>
+
+            <Modal
+                title="新增平台管理员"
+                open={isCreateModalVisible}
+                onOk={handleCreateOk}
+                onCancel={() => setIsCreateModalVisible(false)}
+                okText="创建"
+                cancelText="取消"
+            >
+                <Form form={createForm} layout="vertical">
+                    <Form.Item name="account" label="账号 (手机号)" rules={[{ required: true, message: '请输入账号' }]}>
+                        <Input placeholder="输入登录账号" />
+                    </Form.Item>
+                    <Form.Item name="password" label="初始密码" rules={[{ required: true, message: '请输入初始密码' }]}>
+                        <Input.Password placeholder="输入初始密码" />
+                    </Form.Item>
+                    <Form.Item name="name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
+                        <Input placeholder="输入姓名" />
+                    </Form.Item>
+                    <Form.Item name="sex" label="性别" initialValue={1}>
+                        <Select>
+                            <Option value={1}>男</Option>
+                            <Option value={0}>女</Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item name="role_id" label="角色" initialValue={RoleMapId.admin} rules={[{ required: true }]}>
+                        <Select>
+                            <Option value={RoleMapId.root}>超级管理员</Option>
+                            <Option value={RoleMapId.admin}>平台管理员</Option>
+                        </Select>
+                    </Form.Item>
                 </Form>
             </Modal>
         </div>
     );
 });
 
-export default UserList;
+export default PlatformAdminList;

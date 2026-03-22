@@ -26,7 +26,38 @@ const menuConfig = [
         key: 'school-manage',
         label: '学校管理',
         icon: <BankOutlined />,
-        path: '/school-manage/school-list',
+        children: [
+            {
+                key: 'school-list',
+                label: '学校列表',
+                path: '/school-manage/school-list',
+                roles: ['root', 'admin']
+            },
+            {
+                key: 'teacher-list',
+                label: '教师管理',
+                path: '/school-manage/teacher-list',
+                roles: ['root', 'admin', 'school_root', 'school_admin']
+            },
+            {
+                key: 'student-list',
+                label: '学生管理',
+                path: '/school-manage/student-list',
+                roles: ['root', 'admin', 'school_root', 'school_admin']
+            },
+            {
+                key: 'school-admin-list',
+                label: '学校管理员管理',
+                path: '/school-manage/school-admin-list',
+                roles: ['root', 'admin', 'school_root', 'school_admin']
+            },
+            {
+                key: 'school-info',
+                label: '学校信息',
+                path: '/school-manage/school-info',
+                roles: ['school_root']
+            }
+        ],
     },
     {
         key: 'user-manage',
@@ -37,13 +68,15 @@ const menuConfig = [
                 key: 'user-list',
                 label: '用户列表',
                 path: '/user-manage/user-list',
+                roles: ['root', 'admin']
             },
             {
-                key: 'role-manage',
-                label: '角色管理',
-                path: '/user-manage/role-manage',
-            },
-        ],
+                key: 'platform-admin-list',
+                label: '平台管理员管理',
+                path: '/user-manage/platform-admin-list',
+                roles: ['root']
+            }
+        ]
     },
     {
         key: 'course-manage',

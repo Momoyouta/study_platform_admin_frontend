@@ -7,6 +7,15 @@ export const RoleMap = {
     school_root: '学校超级管理员'
 }
 
+export const RoleMapId = {
+    admin: '1',
+    teacher: '4',
+    student: '3',
+    root: '0',
+    school_admin: '5',
+    school_root: '6'
+}
+
 export const SchoolStatusMap = {
     0: { color: 'orange', text: '审核中' },
     1: { color: 'green', text: '启用' },

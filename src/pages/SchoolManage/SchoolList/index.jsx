@@ -137,7 +137,27 @@ const SchoolList = observer(() => {
     };
 
     const columns = [
-        { title: 'ID', dataIndex: 'id', key: 'id', width: 80 },
+        { 
+            title: 'ID', 
+            dataIndex: 'id', 
+            key: 'id', 
+            width: 120, 
+            ellipsis: true,
+            render: (text, record) => {
+                const id = text || record.userId;
+                return (
+                    <a 
+                        style={{ display: 'block', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                        onClick={() => {
+                            navigator.clipboard.writeText(id);
+                            message.success('ID已复制');
+                        }}
+                    >
+                        {id}
+                    </a>
+                );
+            }
+        },
         { title: '学校名', dataIndex: 'name', key: 'name', ellipsis: true },
         {
             title: '状态',

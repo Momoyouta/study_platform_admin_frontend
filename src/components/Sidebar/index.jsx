@@ -2,8 +2,36 @@ import { useState } from 'react';
 import { Menu, Input } from 'antd';
 import { SearchOutlined } from '@ant-design/icons';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { observer } from 'mobx-react-lite';
+import Store from '@/store/index.ts';
 import menuConfig from '@/config/menuConfig.jsx';
 import './index.less';
+
+/**
+ * 根据角色过滤菜单配置
+ */
+const filterMenuByRoles = (config, userRoles) => {
+    return config
+        .filter((item) => {
+            if (item.roles && item.roles.length > 0) {
+                return item.roles.some(role => userRoles.includes(role));
+            }
+            return true; // 没有配置 roles 则默认所有人可见
+        })
+        .map((item) => {
+            if (item.children) {
+                const filteredChildren = item.children.filter((child) => {
+                    if (child.roles && child.roles.length > 0) {
+                        return child.roles.some(role => userRoles.includes(role));
+                    }
+                    return true;
+                });
+                return { ...item, children: filteredChildren };
+            }
+            return item;
+        })
+        .filter((item) => !item.children || item.children.length > 0);
+};
 
 /**
  * 将 menuConfig 转换为 antd Menu 的 items 格式
@@ -74,13 +102,16 @@ const findOpenKeys = (pathname, config) => {
     return [];
 };
 
-const Sidebar = () => {
+const Sidebar = observer(() => {
     const navigate = useNavigate();
     const location = useLocation();
     const [searchValue, setSearchValue] = useState('');
 
-    const pathMap = buildPathMap(menuConfig);
-    const allItems = buildMenuItems(menuConfig);
+    const userRoles = Store.UserStore.userBaseInfo?.userRoles || [];
+    const authMenuConfig = filterMenuByRoles(menuConfig, userRoles);
+
+    const pathMap = buildPathMap(authMenuConfig);
+    const allItems = buildMenuItems(authMenuConfig);
 
     // 搜索过滤菜单
     const filteredItems = searchValue
@@ -113,8 +144,8 @@ const Sidebar = () => {
         }
     };
 
-    const selectedKeys = findSelectedKey(location.pathname, menuConfig);
-    const defaultOpenKeys = findOpenKeys(location.pathname, menuConfig);
+    const selectedKeys = findSelectedKey(location.pathname, authMenuConfig);
+    const defaultOpenKeys = findOpenKeys(location.pathname, authMenuConfig);
 
     return (
         <div className="sidebar-container">
@@ -143,6 +174,6 @@ const Sidebar = () => {
             />
         </div>
     );
-};
+});
 
 export default Sidebar;

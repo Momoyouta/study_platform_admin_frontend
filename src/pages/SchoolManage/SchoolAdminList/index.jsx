@@ -1,50 +1,66 @@
 import { observer } from 'mobx-react-lite';
-import { Form, Input, Select, Button, Table, Space, Tag, message, Tooltip, Modal } from 'antd';
+import { Form, Input, Button, Table, Space, Tag, message, Tooltip, Modal, Select } from 'antd';
+const { Option } = Select;
 import { useState, useEffect } from 'react';
-import { getUserList, updateUserStatus } from '@/http/api.ts';
+import { getSchoolAdminList, updateSchoolAdmin, createSchoolAdmin } from '@/http/api.ts';
 import { RoleMap, SchoolStatusMap, RoleMapId } from '@/type/map.js';
 import Store from '@/store/index.ts';
 import moment from 'moment';
 import './index.less';
 
-const { Option } = Select;
-
-const UserList = observer(() => {
+const SchoolAdminList = observer(() => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
     const [data, setData] = useState([]);
     const [total, setTotal] = useState(0);
     const [pagination, setPagination] = useState({ current: 1, pageSize: 10 });
 
-    // 编辑弹窗
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
     const [editForm] = Form.useForm();
 
+    // 新增弹窗
+    const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+    const [createForm] = Form.useForm();
+
+    const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
+    const isPlatformAdmin = currentUserRoles.includes('root') || currentUserRoles.includes('admin');
+    const isSchoolRoot = currentUserRoles.includes('school_root');
+    const mySchoolId = Store.UserStore.userBaseInfo?.schoolId;
+
+    const showCreateBtn = isPlatformAdmin || isSchoolRoot;
+
     const fetchList = (pageParams = pagination, searchParams = form.getFieldsValue()) => {
-        setLoading(true);
         const params = {
             page: pageParams.current,
             pageSize: pageParams.pageSize,
             ...searchParams,
         };
-        // 过滤空值
+
+        if (!isPlatformAdmin) {
+            params.schoolId = mySchoolId;
+        } else if (!params.schoolId) {
+            // 平台管理员必须输入学校ID才能查询
+            return;
+        }
+
         Object.keys(params).forEach(key => {
             if (params[key] === undefined || params[key] === '') {
                 delete params[key];
             }
         });
 
-        getUserList(params)
+        setLoading(true);
+        getSchoolAdminList(params)
             .then(res => {
                 if (res.code === 200 || res.data) {
-                    setData(res.data.list || []);
+                    setData(res.data.items || []);
                     setTotal(res.data.total || 0);
                 }
             })
             .catch(error => {
-                console.error('Failed to fetch user list', error);
-                message.error('获取用户列表失败');
+                console.error('Failed to fetch school admin list', error);
+                message.error('获取列表失败');
             })
             .finally(() => {
                 setLoading(false);
@@ -52,10 +68,16 @@ const UserList = observer(() => {
     };
 
     useEffect(() => {
-        fetchList();
+        if (!isPlatformAdmin) {
+            fetchList();
+        }
     }, []);
 
     const onSearch = (values) => {
+        if (isPlatformAdmin && !values.schoolId) {
+            message.warning('平台管理员请先填入学校ID才能进行查询！');
+            return;
+        }
         const newPagination = { ...pagination, current: 1 };
         setPagination(newPagination);
         fetchList(newPagination, values);
@@ -63,7 +85,12 @@ const UserList = observer(() => {
 
     const onReset = () => {
         form.resetFields();
-        onSearch(form.getFieldsValue());
+        if (!isPlatformAdmin) {
+            onSearch(form.getFieldsValue());
+        } else {
+            setData([]);
+            setTotal(0);
+        }
     };
 
     const handleTableChange = (newPagination) => {
@@ -77,16 +104,15 @@ const UserList = observer(() => {
         const isAdmin = currentUserRoles.includes('admin');
         const targetRoles = record.role_id || record.userRoles || [];
         const targetRolesArr = Array.isArray(targetRoles) ? targetRoles : [targetRoles];
-        const targetIsRoot = targetRolesArr.includes('root') || targetRolesArr.includes('1');
-        const targetIsAdmin = targetRolesArr.includes('admin') || targetRolesArr.includes('2');
+        const targetIsRoot = targetRolesArr.includes('root') || targetRolesArr.includes('0');
+        const targetIsAdmin = targetRolesArr.includes('admin') || targetRolesArr.includes('1');
 
-        if (isRoot) return true; // root 可以修改所有人
+        if (isRoot) return true;
         if (isAdmin) {
-            // admin 不能修改 root 和 其他 admin
             if (targetIsRoot || targetIsAdmin) return false;
             return true;
         }
-        return false; // 普通人不能在这里修改
+        return false;
     };
 
     const handleEdit = (record) => {
@@ -98,7 +124,7 @@ const UserList = observer(() => {
         editForm.setFieldsValue({
             name: record.userName || record.name,
             sex: record.sex ? 1 : 0,
-            password: '',
+            password: '', 
         });
         setIsModalVisible(true);
     };
@@ -112,7 +138,7 @@ const UserList = observer(() => {
             if (values.password) {
                 payload.password = values.password;
             }
-            updateUserStatus(editingUser.id || editingUser.userId, payload)
+            updateSchoolAdmin(editingUser.id || editingUser.userId, payload)
                 .then(() => {
                     message.success('更新成功');
                     setIsModalVisible(false);
@@ -125,17 +151,29 @@ const UserList = observer(() => {
         });
     };
 
+    const handleCreateOk = () => {
+        createForm.validateFields().then(values => {
+            const payload = {
+                ...values,
+                sex: values.sex === 1,
+                schoolId: isPlatformAdmin ? values.schoolId : mySchoolId,
+            };
+            createSchoolAdmin(payload)
+                .then(() => {
+                    message.success('创建成功');
+                    setIsCreateModalVisible(false);
+                    createForm.resetFields();
+                    fetchList();
+                })
+                .catch(err => {
+                    console.error('Create failed', err);
+                    message.error('创建失败');
+                });
+        });
+    };
+
     const handleStatusChange = (record, status) => {
-        const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
-        const isRoot = currentUserRoles.includes('root');
-        const targetIsRoot = record.userRoles?.includes('root');
-
-        if (!isRoot && targetIsRoot) {
-            message.error('普通平台管理员无权操作平台超级管理员账号！');
-            return;
-        }
-
-        updateUserStatus(record.id || record.userId, { status })
+        updateSchoolAdmin(record.id || record.userId, { status })
             .then(() => {
                 message.success('状态更新成功');
                 fetchList();
@@ -147,16 +185,16 @@ const UserList = observer(() => {
     };
 
     const columns = [
-        {
-            title: 'ID',
-            dataIndex: 'id',
-            key: 'id',
-            width: 120,
+        { 
+            title: 'ID', 
+            dataIndex: 'id', 
+            key: 'id', 
+            width: 120, 
             ellipsis: true,
             render: (text, record) => {
                 const id = text || record.userId;
                 return (
-                    <a
+                    <a 
                         style={{ display: 'block', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         onClick={() => {
                             navigator.clipboard.writeText(id);
@@ -173,7 +211,7 @@ const UserList = observer(() => {
             title: '状态',
             dataIndex: 'status',
             key: 'status',
-            width: 100,
+            width: 80,
             render: (status) => {
                 const config = SchoolStatusMap[status] || { color: 'default', text: '未知' };
                 return <Tag color={config.color}>{config.text}</Tag>;
@@ -183,6 +221,7 @@ const UserList = observer(() => {
             title: '角色',
             dataIndex: 'role_id',
             key: 'role_id',
+            width: 120,
             render: (roleId, record) => {
                 let roles = roleId || record.userRoles;
                 if (!roles) return '-';
@@ -190,7 +229,7 @@ const UserList = observer(() => {
                     roles = [roles];
                 }
                 const roleIdToStr = {
-                    '0': 'root', '1': 'admin', '3': 'student',
+                    '0': 'root', '1': 'admin', '3': 'student', 
                     '4': 'teacher', '5': 'school_root', '6': 'school_admin'
                 };
                 return roles.map(r => {
@@ -202,19 +241,23 @@ const UserList = observer(() => {
         {
             title: '所属机构',
             key: 'organization',
+            width: 120,
             render: (_, record) => {
-                return record.organization
+                if (!record.schoolId || String(record.schoolId) === '0' || record.schoolId === '') {
+                    return <Tag color="geekblue">平台</Tag>;
+                }
+                return <Tag color="cyan">学校 {record.schoolId}</Tag>;
             },
         },
         {
             title: '性别',
             dataIndex: 'sex',
             key: 'sex',
-            width: 80,
+            width: 60,
             render: (sex) => (sex ? '男' : '女'),
         },
-        { title: '账号', dataIndex: 'account', key: 'account', width: 140 },
-        { title: '电话号', dataIndex: 'phone', key: 'phone', width: 140 },
+        { title: '账号', dataIndex: 'account', key: 'account', width: 120 },
+        { title: '电话号', dataIndex: 'phone', key: 'phone', width: 120 },
         {
             title: '创建时间',
             dataIndex: 'create_time',
@@ -250,56 +293,61 @@ const UserList = observer(() => {
     ];
 
     return (
-        <div className="user-list-container">
+        <div className="list-container">
             <div className="search-wrapper">
                 <Form form={form} layout="inline" onFinish={onSearch} className="search-form">
                     <Form.Item name="id" label="ID">
-                        <Input placeholder="请输入用户ID" allowClear />
+                        <Input placeholder="输入ID" allowClear />
                     </Form.Item>
                     <Form.Item name="name" label="姓名">
-                        <Input placeholder="请输入姓名" allowClear />
+                        <Input placeholder="输入姓名" allowClear />
                     </Form.Item>
                     <Form.Item name="phone" label="电话号">
-                        <Input placeholder="请输入电话号" allowClear />
+                        <Input placeholder="输入电话号" allowClear />
                     </Form.Item>
-                    <Form.Item name="role_id" label="角色">
-                        <Select placeholder="请选择角色" allowClear style={{ width: 160 }}>
-                            {Object.keys(RoleMap).map(key => (
-                                <Option key={key} value={RoleMapId[key]}>{RoleMap[key]}</Option>
-                            ))}
-                        </Select>
-                    </Form.Item>
+                    {isPlatformAdmin && (
+                        <Form.Item name="schoolId" label="所属学校ID">
+                            <Input placeholder="平台管理员必填" allowClear />
+                        </Form.Item>
+                    )}
                     <Form.Item>
                         <Space>
-                            <Button type="primary" htmlType="submit">
-                                查询
-                            </Button>
+                            <Button type="primary" htmlType="submit">查询</Button>
                             <Button onClick={onReset}>重置</Button>
+                            {showCreateBtn && (
+                                <Button type="default" onClick={() => setIsCreateModalVisible(true)}>新增管理员</Button>
+                            )}
                         </Space>
                     </Form.Item>
                 </Form>
             </div>
 
             <div className="table-wrapper">
-                <Table
-                    columns={columns}
-                    dataSource={data}
-                    rowKey={(record) => record.id || record.userId}
-                    loading={loading}
-                    pagination={{
-                        current: pagination.current,
-                        pageSize: pagination.pageSize,
-                        total,
-                        showSizeChanger: true,
-                        showTotal: (total) => `共 ${total} 条记录`,
-                    }}
-                    onChange={handleTableChange}
-                    scroll={{ x: 'max-content' }}
-                />
+                {isPlatformAdmin && !data.length && !loading ? (
+                    <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
+                        请在上方输入学校ID进行查询
+                    </div>
+                ) : (
+                    <Table
+                        columns={columns}
+                        dataSource={data}
+                        rowKey={(record) => record.id || record.userId}
+                        loading={loading}
+                        pagination={{
+                            current: pagination.current,
+                            pageSize: pagination.pageSize,
+                            total,
+                            showSizeChanger: true,
+                            showTotal: (total) => `共 ${total} 条记录`,
+                        }}
+                        onChange={handleTableChange}
+                        scroll={{ x: 'max-content' }}
+                    />
+                )}
             </div>
 
             <Modal
-                title="编辑用户信息"
+                title="编辑属性"
                 open={isModalVisible}
                 onOk={handleEditOk}
                 onCancel={() => setIsModalVisible(false)}
@@ -324,8 +372,49 @@ const UserList = observer(() => {
                     </div>
                 </Form>
             </Modal>
+
+            <Modal
+                title="新增学校管理员"
+                open={isCreateModalVisible}
+                onOk={handleCreateOk}
+                onCancel={() => setIsCreateModalVisible(false)}
+                okText="创建"
+                cancelText="取消"
+            >
+                <Form form={createForm} layout="vertical">
+                    <Form.Item name="account" label="账号 (手机号)" rules={[{ required: true, message: '请输入账号' }]}>
+                        <Input placeholder="输入登录账号" />
+                    </Form.Item>
+                    <Form.Item name="password" label="初始密码" rules={[{ required: true, message: '请输入初始密码' }]}>
+                        <Input.Password placeholder="输入初始密码" />
+                    </Form.Item>
+                    <Form.Item name="name" label="姓名" rules={[{ required: true, message: '请输入姓名' }]}>
+                        <Input placeholder="输入真实姓名" />
+                    </Form.Item>
+                    <Form.Item name="sex" label="性别" initialValue={1}>
+                        <Select>
+                            <Option value={1}>男</Option>
+                            <Option value={0}>女</Option>
+                        </Select>
+                    </Form.Item>
+                    {isPlatformAdmin && (
+                        <Form.Item name="schoolId" label="所属学校ID" rules={[{ required: true, message: '请输入学校ID' }]}>
+                            <Input placeholder="输入该管理员所属学校的ID" />
+                        </Form.Item>
+                    )}
+                    <Form.Item name="role_id" label="职级角色" rules={[{ required: true, message: '请选择角色' }]}>
+                        <Select placeholder="请选择角色">
+                            <Option value={RoleMapId.school_root}>学校超级管理员</Option>
+                            <Option value={RoleMapId.school_admin}>学校管理员</Option>
+                        </Select>
+                    </Form.Item>
+                    <Form.Item name="phone" label="联系电话">
+                        <Input placeholder="选填" />
+                    </Form.Item>
+                </Form>
+            </Modal>
         </div>
     );
 });
 
-export default UserList;
+export default SchoolAdminList;

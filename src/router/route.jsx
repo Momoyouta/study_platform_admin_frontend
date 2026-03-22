@@ -18,8 +18,8 @@ const routes = [
                 component: lazy(() => import('../pages/UserManage/UserList/index.jsx')),
             },
             {
-                path: 'user-manage/role-manage',
-                component: lazy(() => import('../pages/UserManage/RoleManage/index.jsx')),
+                path: 'user-manage/platform-admin-list',
+                component: lazy(() => import('../pages/UserManage/PlatformAdminList/index.jsx')),
             },
             {
                 path: 'course-manage/course-list',
@@ -40,6 +40,22 @@ const routes = [
             {
                 path: 'school-manage/school-list',
                 component: lazy(() => import('../pages/SchoolManage/SchoolList/index.jsx')),
+            },
+            {
+                path: 'school-manage/teacher-list',
+                component: lazy(() => import('../pages/SchoolManage/TeacherList/index.jsx')),
+            },
+            {
+                path: 'school-manage/student-list',
+                component: lazy(() => import('../pages/SchoolManage/StudentList/index.jsx')),
+            },
+            {
+                path: 'school-manage/school-admin-list',
+                component: lazy(() => import('../pages/SchoolManage/SchoolAdminList/index.jsx')),
+            },
+            {
+                path: 'school-manage/school-info',
+                component: lazy(() => import('../pages/SchoolManage/SchoolInfo/index.jsx')),
             },
         ],
     },
