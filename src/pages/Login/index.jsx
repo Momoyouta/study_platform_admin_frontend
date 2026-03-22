@@ -2,7 +2,7 @@ import { observer } from 'mobx-react-lite'
 import { Form, Input, Button, message } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import Store from "@/store/index.ts";
-import { post } from "@/http/http.js";
+import { login } from "@/http/api.ts";
 import styles from './login.module.less';
 
 const Login = observer(() => {
@@ -11,12 +11,7 @@ const Login = observer(() => {
 
     const onFinish = async (values) => {
         try {
-            const res = await post('/auth/login', {
-                account: values.username,
-                pwd: values.password
-            });
-            
-            // 假设接口返回数据包含 access_token
+            const res = await login(values.username, values.password);
             if (res && res.data) {
                 Store.UserStore.setToken(res.data.token);
                 // 如果有用户信息也可以在此设置

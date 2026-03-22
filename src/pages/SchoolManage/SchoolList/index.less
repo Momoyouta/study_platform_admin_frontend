@@ -1,0 +1,46 @@
+.school-list-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #fff;
+    border-radius: 8px;
+    padding: 24px;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+
+    .search-wrapper {
+        margin-bottom: 24px;
+        
+        .search-form {
+            row-gap: 16px;
+        }
+    }
+
+    .table-wrapper {
+        flex: 1;
+        overflow: hidden;
+        
+        .ant-table-wrapper {
+            height: 100%;
+            
+            .ant-spin-nested-loading {
+                height: 100%;
+                
+                .ant-spin-container {
+                    height: 100%;
+                    display: flex;
+                    flex-direction: column;
+                    
+                    .ant-table {
+                        flex: 1;
+                        overflow: auto;
+                    }
+
+                    .ant-pagination {
+                        margin-top: 16px;
+                        margin-bottom: 0;
+                    }
+                }
+            }
+        }
+    }
+}

@@ -1,0 +1,83 @@
+.topbar-container {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 48px;
+    padding: 0 16px;
+    background-color: #ffffff;
+    border-bottom: 1px solid #e8e8e8;
+}
+
+.topbar-spacer {
+    flex: 1;
+}
+
+.topbar-right {
+    display: flex;
+    align-items: center;
+}
+
+.topbar-profile-trigger {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: 50%;
+    transition: background-color 0.3s;
+}
+
+.topbar-profile-trigger:hover {
+    background-color: rgba(0, 0, 0, 0.04);
+}
+
+.topbar-avatar {
+    background-color: transparent !important;
+    color: #333 !important;
+    border: 1.5px solid #999 !important;
+}
+
+/* Popover 内容 */
+.topbar-profile-popover {
+    width: 200px;
+}
+
+.topbar-profile-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 0;
+}
+
+.topbar-profile-detail {
+    display: flex;
+    flex-direction: column;
+}
+
+.topbar-profile-name {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.topbar-profile-role {
+    font-size: 12px;
+    color: #999;
+}
+
+.topbar-profile-divider {
+    height: 1px;
+    background-color: #f0f0f0;
+    margin: 8px 0;
+}
+
+.topbar-logout-btn {
+    color: #666 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
+.topbar-logout-btn:hover {
+    color: #ff4d4f !important;
+    background-color: #fff1f0 !important;
+}
