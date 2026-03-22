@@ -37,6 +37,10 @@ const routes = [
                 path: 'system-settings',
                 component: lazy(() => import('../pages/SystemSettings/index.jsx')),
             },
+            {
+                path: 'school-manage/school-list',
+                component: lazy(() => import('../pages/SchoolManage/SchoolList/index.jsx')),
+            },
         ],
     },
     {

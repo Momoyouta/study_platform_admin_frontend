@@ -39,6 +39,14 @@ E:\毕设\study_platform_frontend\
 └── tsconfig.json           # TypeScript 配置
 ```
 
+## 规范
+
+- 发送请求使用src/http/http.js的方法，api写在同级下的api.ts，接口返回数据默认结构为{code:number,msg:string,data:T}
+- 安装库必须使用pnpm
+- 全局less变量：src/theme/variables.less
+- 对于枚举必须在src/tpye/map中创建映射枚举体
+- 组件内变量优先使用mobx6而非useState
+- 生成的Implementation Plan需为中文
 ## 快速开始
 
 ### 1. 环境准备
@@ -67,13 +75,6 @@ pnpm run dev
 pnpm run build
 ```
 
-### 5. 代码校验
-
-运行 ESLint 进行静态代码检查：
-
-```bash
-pnpm run lint
-```
 
 ## 环境配置
 

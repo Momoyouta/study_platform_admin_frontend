@@ -16,3 +16,24 @@ export const jwtAuth = (accessToken: string) => {
         accessToken
     });
 }
+
+/**
+ * 分页获取学校列表
+ */
+export const getSchools = (params: any) => {
+    return http.get('/school', { params });
+}
+
+/**
+ * 更新学校信息 (包括修改基本信息、修改状态[启用/禁用/通过审核])
+ */
+export const updateSchool = (id: number | string, data: any) => {
+    return http.put(`/school/${id}`, data);
+}
+
+/**
+ * 拒绝审核并硬删除学校
+ */
+export const removeSchoolHard = (id: number | string) => {
+    return http.delete(`/school/removeHard/${id}`);
+}

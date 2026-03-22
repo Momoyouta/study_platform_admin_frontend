@@ -4,6 +4,7 @@ import {
     BookOutlined,
     FileTextOutlined,
     SettingOutlined,
+    BankOutlined,
 } from '@ant-design/icons';
 
 /**
@@ -20,6 +21,12 @@ const menuConfig = [
         label: '仪表盘',
         icon: <DashboardOutlined />,
         path: '/dashboard',
+    },
+    {
+        key: 'school-manage',
+        label: '学校管理',
+        icon: <BankOutlined />,
+        path: '/school-manage/school-list',
     },
     {
         key: 'user-manage',
