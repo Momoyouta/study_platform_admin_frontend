@@ -102,12 +102,13 @@ const SchoolAdminList = observer(() => {
         const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
         const isRoot = currentUserRoles.includes('root');
         const isAdmin = currentUserRoles.includes('admin');
+        const isSchoolRoot = currentUserRoles.includes('school_root');
         const targetRoles = record.role_id || record.userRoles || [];
         const targetRolesArr = Array.isArray(targetRoles) ? targetRoles : [targetRoles];
         const targetIsRoot = targetRolesArr.includes('root') || targetRolesArr.includes('0');
         const targetIsAdmin = targetRolesArr.includes('admin') || targetRolesArr.includes('1');
 
-        if (isRoot) return true;
+        if (isRoot || isSchoolRoot) return true;
         if (isAdmin) {
             if (targetIsRoot || targetIsAdmin) return false;
             return true;
@@ -124,7 +125,7 @@ const SchoolAdminList = observer(() => {
         editForm.setFieldsValue({
             name: record.userName || record.name,
             sex: record.sex ? 1 : 0,
-            password: '', 
+            password: '',
         });
         setIsModalVisible(true);
     };
@@ -185,16 +186,16 @@ const SchoolAdminList = observer(() => {
     };
 
     const columns = [
-        { 
-            title: 'ID', 
-            dataIndex: 'id', 
-            key: 'id', 
-            width: 120, 
+        {
+            title: 'ID',
+            dataIndex: 'id',
+            key: 'id',
+            width: 120,
             ellipsis: true,
             render: (text, record) => {
                 const id = text || record.userId;
                 return (
-                    <a 
+                    <a
                         style={{ display: 'block', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         onClick={() => {
                             navigator.clipboard.writeText(id);
@@ -229,7 +230,7 @@ const SchoolAdminList = observer(() => {
                     roles = [roles];
                 }
                 const roleIdToStr = {
-                    '0': 'root', '1': 'admin', '3': 'student', 
+                    '0': 'root', '1': 'admin', '3': 'student',
                     '4': 'teacher', '5': 'school_root', '6': 'school_admin'
                 };
                 return roles.map(r => {
@@ -272,7 +273,7 @@ const SchoolAdminList = observer(() => {
             width: 160,
             render: (val) => val ? moment.unix(val).format('YYYY-MM-DD HH:mm:ss') : '-',
         },
-        {
+        showCreateBtn && {
             title: '操作',
             key: 'action',
             width: 120,
@@ -280,17 +281,17 @@ const SchoolAdminList = observer(() => {
             render: (_, record) => {
                 return (
                     <Space>
-                        <a onClick={() => handleEdit(record)}>编辑</a>
+                        <Button type="link" disabled={!showCreateBtn} onClick={() => handleEdit(record)}>编辑</Button>
                         {record.status === 1 || record.status === undefined ? (
-                            <a style={{ color: 'red' }} onClick={() => handleStatusChange(record, 2)}>禁用</a>
+                            <Button type="link" disabled={!showCreateBtn} style={{ color: 'red' }} onClick={() => handleStatusChange(record, 2)}>禁用</Button>
                         ) : (
-                            <a style={{ color: 'green' }} onClick={() => handleStatusChange(record, 1)}>启用</a>
+                            <Button type="link" disabled={!showCreateBtn} style={{ color: 'green' }} onClick={() => handleStatusChange(record, 1)}>启用</Button>
                         )}
                     </Space>
                 );
             },
         },
-    ];
+    ].filter(Boolean);
 
     return (
         <div className="list-container">
@@ -310,6 +311,13 @@ const SchoolAdminList = observer(() => {
                             <Input placeholder="平台管理员必填" allowClear />
                         </Form.Item>
                     )}
+                    <Form.Item name="status" label="状态" initialValue="">
+                        <Select style={{ width: 120 }}>
+                            <Option value="">全部</Option>
+                            <Option value={1}>启用</Option>
+                            <Option value={2}>禁用</Option>
+                        </Select>
+                    </Form.Item>
                     <Form.Item>
                         <Space>
                             <Button type="primary" htmlType="submit">查询</Button>
@@ -382,7 +390,7 @@ const SchoolAdminList = observer(() => {
                 cancelText="取消"
             >
                 <Form form={createForm} layout="vertical">
-                    <Form.Item name="account" label="账号 (手机号)" rules={[{ required: true, message: '请输入账号' }]}>
+                    <Form.Item name="account" label="账号" rules={[{ required: true, message: '请输入账号' }]}>
                         <Input placeholder="输入登录账号" />
                     </Form.Item>
                     <Form.Item name="password" label="初始密码" rules={[{ required: true, message: '请输入初始密码' }]}>
@@ -402,9 +410,8 @@ const SchoolAdminList = observer(() => {
                             <Input placeholder="输入该管理员所属学校的ID" />
                         </Form.Item>
                     )}
-                    <Form.Item name="role_id" label="职级角色" rules={[{ required: true, message: '请选择角色' }]}>
+                    <Form.Item name="role_id" label="职级角色" initialValue={RoleMapId.school_admin} rules={[{ required: true, message: '请选择角色' }]}>
                         <Select placeholder="请选择角色">
-                            <Option value={RoleMapId.school_root}>学校超级管理员</Option>
                             <Option value={RoleMapId.school_admin}>学校管理员</Option>
                         </Select>
                     </Form.Item>

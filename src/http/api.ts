@@ -82,6 +82,28 @@ export const deleteSchoolAdmin = (id: number | string) => {
     return http.delete(`/school-admin/${id}`);
 }
 
+// ================= 邀请码管理 (Invite) =================
+/**
+ * 分页获取邀请码列表
+ */
+export const getInviteList = (params: any) => {
+    return http.get('/admin/invite', { params });
+}
+
+/**
+ * 创建邀请码
+ */
+export const createInvite = (data: any) => {
+    return http.post('/admin/invite', data);
+}
+
+/**
+ * 删除邀请码
+ */
+export const deleteInvite = (code: string) => {
+    return http.delete(`/admin/invite/${code}`);
+}
+
 // ================= 额外补充 =================
 export const getSchoolById = (id: number | string) => {
     return http.get(`/school/${id}`);
