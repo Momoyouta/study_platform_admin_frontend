@@ -52,6 +52,12 @@ const menuConfig = [
                 roles: ['root', 'admin', 'school_root', 'school_admin']
             },
             {
+                key: 'invite-code-manage',
+                label: '邀请码管理',
+                path: '/school-manage/invite-code-manage',
+                roles: ['root', 'admin', 'school_root', 'school_admin']
+            },
+            {
                 key: 'school-info',
                 label: '学校信息',
                 path: '/school-manage/school-info',

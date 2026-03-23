@@ -54,6 +54,10 @@ const routes = [
                 component: lazy(() => import('../pages/SchoolManage/SchoolAdminList/index.jsx')),
             },
             {
+                path: 'school-manage/invite-code-manage',
+                component: lazy(() => import('../pages/SchoolManage/InviteCodeManage/index.jsx')),
+            },
+            {
                 path: 'school-manage/school-info',
                 component: lazy(() => import('../pages/SchoolManage/SchoolInfo/index.jsx')),
             },

@@ -236,6 +236,13 @@ const StudentList = observer(() => {
                             <Input placeholder="输入学校ID" allowClear />
                         </Form.Item>
                     )}
+                    <Form.Item name="status" label="状态" initialValue="">
+                        <Select style={{ width: 120 }}>
+                            <Option value="">全部</Option>
+                            <Option value={1}>启用</Option>
+                            <Option value={2}>禁用</Option>
+                        </Select>
+                    </Form.Item>
                     <Form.Item>
                         <Space>
                             <Button type="primary" htmlType="submit">查询</Button>
