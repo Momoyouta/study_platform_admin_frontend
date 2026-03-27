@@ -21,3 +21,9 @@ export const SchoolStatusMap = {
     1: { color: 'green', text: '启用' },
     2: { color: 'red', text: '禁用' },
 };
+
+export const SchoolApplicationStatusMap = {
+    0: { color: 'orange', text: '待审核' },
+    1: { color: 'green', text: '已通过' },
+    2: { color: 'red', text: '已驳回' },
+};

@@ -38,6 +38,49 @@ export const removeSchoolHard = (id: number | string) => {
     return http.delete(`/school/removeHard/${id}`);
 }
 
+/**
+ * 学校申请
+ */
+export const applySchool = (data: {
+    school_name: string;
+    school_address: string;
+    charge_name: string;
+    charge_phone: string;
+    evidence_img_url: string;
+}) => {
+    return http.post('/school/applySchool', data);
+}
+
+/**
+ * 分页获取学校申请记录
+ */
+export const getSchoolApplications = (params: any) => {
+    return http.get('/school/applications', { params });
+}
+
+/**
+ * 审批学校申请
+ */
+export const reviewSchoolApplication = (
+    id: number | string,
+    data: {
+        action: 'approve' | 'reject';
+        review_remark?: string;
+        reject_reason?: string;
+    }
+) => {
+    return http.put(`/school/applications/${id}/review`, data);
+}
+
+/**
+ * 上传图片（<5MB）
+ */
+export const uploadImageTemp = (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return http.post('/file/upload/imageTemp', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+}
+
 // ================= 用户管理 (User) =================
 export const getUserList = (params: any) => {
     return http.get('/user', { params });

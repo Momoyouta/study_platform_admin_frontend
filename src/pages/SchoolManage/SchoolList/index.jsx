@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { getSchools, updateSchool, removeSchoolHard } from '@/http/api.ts';
 import { SchoolStatusMap } from '@/type/map.js';
 import './index.less';
+import { toViewFileUrl } from '@/utils/fileUrl';
 
 const { Option } = Select;
 
@@ -123,12 +124,13 @@ const SchoolList = observer(() => {
             message.warning('暂无证明图片');
             return;
         }
+        const trueUrl = toViewFileUrl(url);
         Modal.info({
             title: '证明图片',
             width: 600,
             content: (
                 <div style={{ textAlign: 'center', marginTop: 16 }}>
-                    <img src={url} alt="证明" style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain' }} />
+                    <img src={trueUrl} alt="证明" style={{ maxWidth: '100%', maxHeight: '60vh', objectFit: 'contain' }} />
                 </div>
             ),
             okText: '关闭',
@@ -187,14 +189,6 @@ const SchoolList = observer(() => {
             key: 'action',
             width: 180,
             render: (_, record) => {
-                if (record.status === 0) {
-                    return (
-                        <Space>
-                            <a onClick={() => handleStatusChange(record.id, 1)}>通过</a>
-                            <a style={{ color: 'red' }} onClick={() => handleStatusChange(record.id, null, true)}>拒绝</a>
-                        </Space>
-                    );
-                }
                 return (
                     <Space>
                         <a onClick={() => handleEditClick(record)}>编辑</a>

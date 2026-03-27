@@ -34,6 +34,12 @@ const menuConfig = [
                 roles: ['root', 'admin']
             },
             {
+                key: 'school-approval',
+                label: '学校审批',
+                path: '/school-manage/school-approval',
+                roles: ['root', 'admin']
+            },
+            {
                 key: 'teacher-list',
                 label: '教师管理',
                 path: '/school-manage/teacher-list',

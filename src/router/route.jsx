@@ -42,6 +42,10 @@ const routes = [
                 component: lazy(() => import('../pages/SchoolManage/SchoolList/index.jsx')),
             },
             {
+                path: 'school-manage/school-approval',
+                component: lazy(() => import('../pages/SchoolManage/SchoolApproval/index.jsx')),
+            },
+            {
                 path: 'school-manage/teacher-list',
                 component: lazy(() => import('../pages/SchoolManage/TeacherList/index.jsx')),
             },
