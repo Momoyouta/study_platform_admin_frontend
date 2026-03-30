@@ -1,5 +1,6 @@
 import http from "./http.js";
 import type { CreateInviteDto } from "@/type/invite";
+import type { CourseListParams, CreateCourseDto, UpdateCourseDto } from "../type/course";
 
 export const login = (account: string, pwd: string) => {
     return http.post('/auth/admin/login', {
@@ -146,6 +147,19 @@ export const createInvite = (data: CreateInviteDto) => {
  */
 export const deleteInvite = (code: string) => {
     return http.delete(`/admin/invite/${code}`);
+}
+
+// ================= 课程管理 (Course) =================
+export const listCourseAdmin = (params: CourseListParams) => {
+    return http.get('/course/listCourseAdmin', { params });
+}
+
+export const createCourseAdmin = (data: CreateCourseDto) => {
+    return http.post('/course/createCourseAdmin', data);
+}
+
+export const updateCourseAdmin = (data: UpdateCourseDto) => {
+    return http.put('/course/updateCourseAdmin', data);
 }
 
 // ================= 额外补充 =================
