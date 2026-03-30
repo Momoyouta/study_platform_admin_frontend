@@ -1,4 +1,5 @@
 import http from "./http.js";
+import type { CreateInviteDto } from "@/type/invite";
 
 export const login = (account: string, pwd: string) => {
     return http.post('/auth/admin/login', {
@@ -136,7 +137,7 @@ export const getInviteList = (params: any) => {
 /**
  * 创建邀请码
  */
-export const createInvite = (data: any) => {
+export const createInvite = (data: CreateInviteDto) => {
     return http.post('/admin/invite', data);
 }
 

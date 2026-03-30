@@ -3,6 +3,7 @@ export interface CreateInviteDto {
   school_id: string;
   grade?: string;
   class_id?: string;
+  course_id?: string;
   ttl?: number;
 }
 
@@ -15,6 +16,7 @@ export interface InviteItem {
   creater_name?: string;
   grade?: string;
   class_id?: string;
+  course_id?: string;
   create_time: number;
   ttl: number;
 }

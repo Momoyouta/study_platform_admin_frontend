@@ -23,6 +23,7 @@ const InviteCodeManage = observer(() => {
 
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
     const [createForm] = Form.useForm();
+    const selectedCreateType = Form.useWatch('type', createForm);
     const [ttlUnit, setTtlUnit] = useState('hours');
 
     const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
@@ -73,6 +74,12 @@ const InviteCodeManage = observer(() => {
         }
     }, []);
 
+    useEffect(() => {
+        if (selectedCreateType !== 2) {
+            createForm.setFieldValue('course_id', undefined);
+        }
+    }, [selectedCreateType, createForm]);
+
     const onSearch = (values) => {
         if (isPlatformAdmin && !values.school_id) {
             message.warning('平台管理员请先填入学校ID才能进行查询！');
@@ -118,7 +125,7 @@ const InviteCodeManage = observer(() => {
 
     const handleCreateOk = () => {
         createForm.validateFields().then(values => {
-            let ttlInSeconds = parseInt(values.ttl_value);
+            let ttlInSeconds = parseInt(values.ttl_value, 10);
             if (ttlUnit === 'hours') {
                 ttlInSeconds *= 3600;
             } else if (ttlUnit === 'days') {
@@ -132,6 +139,16 @@ const InviteCodeManage = observer(() => {
                 class_id: values.class_id,
                 ttl: ttlInSeconds,
             };
+
+            if (values.type === 2) {
+                payload.course_id = values.course_id;
+            }
+
+            Object.keys(payload).forEach(key => {
+                if (payload[key] === undefined || payload[key] === '') {
+                    delete payload[key];
+                }
+            });
 
             createInvite(payload)
                 .then(() => {
@@ -297,7 +314,27 @@ const InviteCodeManage = observer(() => {
                         <Input placeholder="例如: 2023" />
                     </Form.Item>
                     <Form.Item name="class_id" label="所属班级ID (选填)">
-                        <Input placeholder="课程邀请码必填" />
+                        <Input placeholder="例如: class-101" />
+                    </Form.Item>
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prevValues, curValues) => prevValues.type !== curValues.type}
+                    >
+                        {({ getFieldValue }) => {
+                            if (getFieldValue('type') !== 2) {
+                                return null;
+                            }
+                            return (
+                                <Form.Item
+                                    name="course_id"
+                                    label="所属课程ID"
+                                    preserve={false}
+                                    rules={[{ required: true, message: '课程邀请码必须填写课程ID' }]}
+                                >
+                                    <Input placeholder="请输入课程ID（字符串）" />
+                                </Form.Item>
+                            );
+                        }}
                     </Form.Item>
                     <Form.Item label="有效期 (TTL)" required>
                         <Space.Compact style={{ width: '100%' }}>
