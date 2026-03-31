@@ -1,10 +1,11 @@
 import { observer } from 'mobx-react-lite';
 import { Form, Input, Select, Button, Table, Space, Tag, message, Modal } from 'antd';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getUserList, updateUserStatus, register } from '@/http/api.ts';
 import { RoleMap, SchoolStatusMap, RoleMapId } from '@/type/map.js';
 import Store from '@/store/index.ts';
 import moment from 'moment';
+import UserEditModal from '@/components/UserEditModal';
 import './index.less';
 
 const { Option } = Select;
@@ -19,7 +20,6 @@ const PlatformAdminList = observer(() => {
     // 编辑弹窗
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [editForm] = Form.useForm();
 
     // 新增弹窗
     const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
@@ -28,7 +28,7 @@ const PlatformAdminList = observer(() => {
     const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
     const isRoot = currentUserRoles.includes('root');
 
-    const fetchList = (pageParams = pagination, searchParams = form.getFieldsValue()) => {
+    const fetchList = useCallback((pageParams, searchParams) => {
         setLoading(true);
         const params = {
             page: pageParams.current,
@@ -56,11 +56,12 @@ const PlatformAdminList = observer(() => {
             .finally(() => {
                 setLoading(false);
             });
-    };
+    }, []);
 
     useEffect(() => {
-        fetchList();
-    }, []);
+        // 保持与其他列表页一致：仅在首次进入页面时拉取数据。
+        fetchList({ current: 1, pageSize: 10 }, form.getFieldsValue());
+    }, [fetchList, form]);
 
     const onSearch = (values) => {
         const newPagination = { ...pagination, current: 1 };
@@ -70,12 +71,13 @@ const PlatformAdminList = observer(() => {
 
     const onReset = () => {
         form.resetFields();
-        onSearch(form.getFieldsValue());
+        const resetValues = form.getFieldsValue();
+        onSearch(resetValues);
     };
 
     const handleTableChange = (newPagination) => {
         setPagination(newPagination);
-        fetchList(newPagination);
+        fetchList(newPagination, form.getFieldsValue());
     };
 
     const handleEdit = (record) => {
@@ -84,34 +86,20 @@ const PlatformAdminList = observer(() => {
             return;
         }
         setEditingUser(record);
-        editForm.setFieldsValue({
-            name: record.userName || record.name,
-            sex: record.sex ? 1 : 0,
-            password: '',
-        });
         setIsModalVisible(true);
     };
 
-    const handleEditOk = () => {
-        editForm.validateFields().then(values => {
-            const payload = {
-                name: values.name,
-                sex: values.sex === 1,
-            };
-            if (values.password) {
-                payload.password = values.password;
-            }
-            updateUserStatus(editingUser.id || editingUser.userId, payload)
-                .then(() => {
-                    message.success('更新成功');
-                    setIsModalVisible(false);
-                    fetchList();
-                })
-                .catch(err => {
-                    console.error('Update failed', err);
-                    message.error('信息更新失败');
-                });
-        });
+    const handleEditSubmit = async (payload) => {
+        try {
+            await updateUserStatus(editingUser.id || editingUser.userId, payload);
+            message.success('更新成功');
+            setIsModalVisible(false);
+            fetchList(pagination, form.getFieldsValue());
+        } catch (err) {
+            console.error('Update failed', err);
+            message.error('信息更新失败');
+            throw err;
+        }
     };
 
     const handleCreateOk = () => {
@@ -126,7 +114,7 @@ const PlatformAdminList = observer(() => {
                     message.success('创建成功');
                     setIsCreateModalVisible(false);
                     createForm.resetFields();
-                    fetchList();
+                    fetchList(pagination, form.getFieldsValue());
                 })
                 .catch(err => {
                     console.error('Create failed', err);
@@ -143,7 +131,7 @@ const PlatformAdminList = observer(() => {
         updateUserStatus(record.id || record.userId, { status })
             .then(() => {
                 message.success('状态更新成功');
-                fetchList();
+                fetchList(pagination, form.getFieldsValue());
             })
             .catch(error => {
                 console.error('Status update failed', error);
@@ -296,29 +284,15 @@ const PlatformAdminList = observer(() => {
                 />
             </div>
 
-            <Modal
-                title="编辑属性"
+            <UserEditModal
                 open={isModalVisible}
-                onOk={handleEditOk}
+                title="编辑属性"
+                record={editingUser}
+                onSubmit={handleEditSubmit}
                 onCancel={() => setIsModalVisible(false)}
-                okText="保存"
-                cancelText="取消"
-            >
-                <Form form={editForm} layout="vertical">
-                    <Form.Item name="name" label="姓名" rules={[{ required: true, message: '姓名不能为空' }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="sex" label="性别">
-                        <Select>
-                            <Option value={1}>男</Option>
-                            <Option value={0}>女</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="password" label="新密码" tooltip="如果不修改密码请留空">
-                        <Input.Password placeholder="留空则不修改密码" />
-                    </Form.Item>
-                </Form>
-            </Modal>
+                avatarFieldKey="avatar"
+                note="*注：ID、账号、角色等关键信息不可通过普通编辑接口修改。"
+            />
 
             <Modal
                 title="新增平台管理员"

@@ -1,11 +1,12 @@
 import { observer } from 'mobx-react-lite';
-import { Form, Input, Button, Table, Space, Tag, message, Tooltip, Modal, Select } from 'antd';
+import { Form, Input, Button, Table, Space, Tag, message, Select } from 'antd';
 const { Option } = Select;
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getStudentList, updateStudent } from '@/http/api.ts';
-import { RoleMap, SchoolStatusMap } from '@/type/map.js';
+import { SchoolStatusMap } from '@/type/map.js';
 import Store from '@/store/index.ts';
 import moment from 'moment';
+import UserEditModal from '@/components/UserEditModal';
 import './index.less';
 
 const StudentList = observer(() => {
@@ -17,13 +18,12 @@ const StudentList = observer(() => {
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [editForm] = Form.useForm();
 
     const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
     const isPlatformAdmin = currentUserRoles.includes('root') || currentUserRoles.includes('admin');
     const mySchoolId = Store.UserStore.userBaseInfo?.schoolId;
 
-    const fetchList = (pageParams = pagination, searchParams = form.getFieldsValue()) => {
+    const fetchList = useCallback((pageParams, searchParams) => {
         setLoading(true);
         const params = {
             page: pageParams.current,
@@ -55,11 +55,11 @@ const StudentList = observer(() => {
             .finally(() => {
                 setLoading(false);
             });
-    };
+    }, [isPlatformAdmin, mySchoolId]);
 
     useEffect(() => {
-        fetchList();
-    }, []);
+        fetchList({ current: 1, pageSize: 10 }, form.getFieldsValue());
+    }, [fetchList, form]);
 
     const onSearch = (values) => {
         const newPagination = { ...pagination, current: 1 };
@@ -69,51 +69,38 @@ const StudentList = observer(() => {
 
     const onReset = () => {
         form.resetFields();
-        onSearch(form.getFieldsValue());
+        const resetValues = form.getFieldsValue();
+        onSearch(resetValues);
     };
 
     const handleTableChange = (newPagination) => {
         setPagination(newPagination);
-        fetchList(newPagination);
+        fetchList(newPagination, form.getFieldsValue());
     };
 
     const handleEdit = (record) => {
         setEditingUser(record);
-        editForm.setFieldsValue({
-            name: record.userName || record.name,
-            sex: record.sex ? 1 : 0,
-            password: '',
-        });
         setIsModalVisible(true);
     };
 
-    const handleEditOk = () => {
-        editForm.validateFields().then(values => {
-            const payload = {
-                name: values.name,
-                sex: values.sex === 1,
-            };
-            if (values.password) {
-                payload.password = values.password;
-            }
-            updateStudent(editingUser.id || editingUser.userId, payload)
-                .then(() => {
-                    message.success('更新成功');
-                    setIsModalVisible(false);
-                    fetchList();
-                })
-                .catch(err => {
-                    console.error('Update failed', err);
-                    message.error('信息更新失败');
-                });
-        });
+    const handleEditSubmit = async (payload) => {
+        try {
+            await updateStudent(editingUser.id || editingUser.userId, payload);
+            message.success('更新成功');
+            setIsModalVisible(false);
+            fetchList(pagination, form.getFieldsValue());
+        } catch (err) {
+            console.error('Update failed', err);
+            message.error('信息更新失败');
+            throw err;
+        }
     };
 
     const handleStatusChange = (record, status) => {
         updateStudent(record.id || record.userId, { status })
             .then(() => {
                 message.success('状态更新成功');
-                fetchList();
+                fetchList(pagination, form.getFieldsValue());
             })
             .catch(error => {
                 console.error('Status update failed', error);
@@ -270,32 +257,16 @@ const StudentList = observer(() => {
                 />
             </div>
 
-            <Modal
-                title="编辑属性"
+            <UserEditModal
                 open={isModalVisible}
-                onOk={handleEditOk}
+                title="编辑学生信息"
+                record={editingUser}
+                onSubmit={handleEditSubmit}
                 onCancel={() => setIsModalVisible(false)}
-                okText="保存"
-                cancelText="取消"
-            >
-                <Form form={editForm} layout="vertical">
-                    <Form.Item name="name" label="姓名" rules={[{ required: true, message: '姓名不能为空' }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="sex" label="性别">
-                        <Select>
-                            <Option value={1}>男</Option>
-                            <Option value={0}>女</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="password" label="新密码" tooltip="如果不修改密码请留空">
-                        <Input.Password placeholder="留空则不修改密码" />
-                    </Form.Item>
-                    <div style={{ color: '#888', marginTop: '10px' }}>
-                        *注：ID、账号、手机号、学号、归属机构等关键信息不可通过普通编辑接口修改。
-                    </div>
-                </Form>
-            </Modal>
+                extraFields={[{ name: 'student_number', label: '学号', placeholder: '请输入学号' }]}
+                avatarFieldKey="avatar"
+                note="*注：ID、账号、归属机构等关键信息不可通过普通编辑接口修改。"
+            />
         </div>
     );
 });

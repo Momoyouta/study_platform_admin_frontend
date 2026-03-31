@@ -1,10 +1,11 @@
 import { observer } from 'mobx-react-lite';
-import { Form, Input, Select, Button, Table, Space, Tag, message, Tooltip, Modal } from 'antd';
+import { Form, Input, Select, Button, Table, Space, Tag, message } from 'antd';
 import { useState, useEffect } from 'react';
 import { getTeacherList, updateTeacher } from '@/http/api.ts';
-import { RoleMap, SchoolStatusMap } from '@/type/map.js';
+import { SchoolStatusMap } from '@/type/map.js';
 import Store from '@/store/index.ts';
 import moment from 'moment';
+import UserEditModal from '@/components/UserEditModal';
 import './index.less';
 
 const { Option } = Select;
@@ -18,7 +19,6 @@ const TeacherList = observer(() => {
 
     const [isModalVisible, setIsModalVisible] = useState(false);
     const [editingUser, setEditingUser] = useState(null);
-    const [editForm] = Form.useForm();
 
     const currentUserRoles = Store.UserStore.userBaseInfo?.userRoles || [];
     const isPlatformAdmin = currentUserRoles.includes('root') || currentUserRoles.includes('admin');
@@ -81,34 +81,20 @@ const TeacherList = observer(() => {
 
     const handleEdit = (record) => {
         setEditingUser(record);
-        editForm.setFieldsValue({
-            name: record.userName || record.name,
-            sex: record.sex ? 1 : 0,
-            password: '',
-        });
         setIsModalVisible(true);
     };
 
-    const handleEditOk = () => {
-        editForm.validateFields().then(values => {
-            const payload = {
-                name: values.name,
-                sex: values.sex === 1,
-            };
-            if (values.password) {
-                payload.password = values.password;
-            }
-            updateTeacher(editingUser.id || editingUser.userId, payload)
-                .then(() => {
-                    message.success('更新成功');
-                    setIsModalVisible(false);
-                    fetchList();
-                })
-                .catch(err => {
-                    console.error('Update failed', err);
-                    message.error('信息更新失败');
-                });
-        });
+    const handleEditSubmit = async (payload) => {
+        try {
+            await updateTeacher(editingUser.id || editingUser.userId, payload);
+            message.success('更新成功');
+            setIsModalVisible(false);
+            fetchList();
+        } catch (err) {
+            console.error('Update failed', err);
+            message.error('信息更新失败');
+            throw err;
+        }
     };
 
     const handleStatusChange = (record, status) => {
@@ -272,32 +258,16 @@ const TeacherList = observer(() => {
                 />
             </div>
 
-            <Modal
-                title="编辑属性"
+            <UserEditModal
                 open={isModalVisible}
-                onOk={handleEditOk}
+                title="编辑教师信息"
+                record={editingUser}
+                onSubmit={handleEditSubmit}
                 onCancel={() => setIsModalVisible(false)}
-                okText="保存"
-                cancelText="取消"
-            >
-                <Form form={editForm} layout="vertical">
-                    <Form.Item name="name" label="姓名" rules={[{ required: true, message: '姓名不能为空' }]}>
-                        <Input />
-                    </Form.Item>
-                    <Form.Item name="sex" label="性别">
-                        <Select>
-                            <Option value={1}>男</Option>
-                            <Option value={0}>女</Option>
-                        </Select>
-                    </Form.Item>
-                    <Form.Item name="password" label="新密码" tooltip="如果不修改密码请留空">
-                        <Input.Password placeholder="留空则不修改密码" />
-                    </Form.Item>
-                    <div style={{ color: '#888', marginTop: '10px' }}>
-                        *注：ID、账号、手机号、工号、归属机构等关键信息不可通过普通编辑接口修改。
-                    </div>
-                </Form>
-            </Modal>
+                extraFields={[{ name: 'teacher_number', label: '工号', placeholder: '请输入工号' }]}
+                avatarFieldKey="avatar"
+                note="*注：ID、账号、归属机构等关键信息不可通过普通编辑接口修改。"
+            />
         </div>
     );
 });
