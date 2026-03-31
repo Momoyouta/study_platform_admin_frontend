@@ -1,6 +1,7 @@
 import { observer } from 'mobx-react-lite';
 import { Form, Input, Select, Button, Table, Space, Tag, message, Modal } from 'antd';
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { createCourseAdmin, listCourseAdmin, updateCourseAdmin } from '@/http/api.ts';
 import Store from '@/store/index.ts';
 import moment from 'moment';
@@ -24,6 +25,7 @@ const cleanPayload = (payload) => {
 };
 
 const CourseList = observer(() => {
+    const navigate = useNavigate();
     const [form] = Form.useForm();
     const [createForm] = Form.useForm();
     const [loading, setLoading] = useState(false);
@@ -144,8 +146,8 @@ const CourseList = observer(() => {
         });
     };
 
-    const handleEdit = () => {
-        message.info('编辑功能建设中，后续将跳转详情页');
+    const handleEdit = (record) => {
+        navigate(`/courseDetail?courseId=${record.id}`);
     };
 
     const handleStatusChange = (record, status) => {
@@ -203,6 +205,14 @@ const CourseList = observer(() => {
             ellipsis: true,
         },
         {
+            title: '学校名称',
+            dataIndex: 'school_name',
+            key: 'school_name',
+            width: 180,
+            ellipsis: true,
+            render: (value) => value || '-',
+        },
+        {
             title: '状态',
             dataIndex: 'status',
             key: 'status',
@@ -211,20 +221,6 @@ const CourseList = observer(() => {
                 const config = CourseStatusMap[status] || { color: 'default', text: '未知' };
                 return <Tag color={config.color}>{config.text}</Tag>;
             },
-        },
-        {
-            title: '章节数',
-            dataIndex: 'chapter_count',
-            key: 'chapter_count',
-            width: 100,
-            render: (value) => value ?? 0,
-        },
-        {
-            title: '课时数',
-            dataIndex: 'total_lesson_count',
-            key: 'total_lesson_count',
-            width: 100,
-            render: (value) => value ?? 0,
         },
         {
             title: '任课老师',
@@ -265,7 +261,7 @@ const CourseList = observer(() => {
 
                 return (
                     <Space>
-                        <a onClick={handleEdit}>编辑</a>
+                        <a onClick={() => handleEdit(record)}>编辑</a>
                         <a
                             style={{ color: nextStatus === 1 ? 'green' : 'red' }}
                             onClick={() => handleStatusChange(record, nextStatus)}

@@ -162,6 +162,14 @@ export const updateCourseAdmin = (data: UpdateCourseDto) => {
     return http.put('/course/updateCourseAdmin', data);
 }
 
+export const getCourseBasicAdmin = (id: string | number) => {
+    return http.get(`/course/getCourseBasicAdmin/${id}`);
+}
+
+export const getCourseDescriptionAdmin = (id: string | number) => {
+    return http.get(`/course/getCourseDescription/${id}`);
+}
+
 // ================= 额外补充 =================
 export const getSchoolById = (id: number | string) => {
     return http.get(`/school/${id}`);

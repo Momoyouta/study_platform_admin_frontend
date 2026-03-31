@@ -67,7 +67,7 @@
 ### Requirement: 管理员可切换课程发布状态
 系统 MUST 支持在课程列表操作列中切换课程状态，并调用 updateCourseAdmin 持久化状态变更。
 
-#### Scenario: 将课程从未发布切换为已发布
+#### Scenario: 将课程从此未发布切换为已发布
 - **WHEN** 管理员在课程操作列执行“发布”操作
 - **THEN** 系统调用 updateCourseAdmin，提交 { id, status: 1 } 并在成功后更新列表状态
 
@@ -75,9 +75,43 @@
 - **WHEN** 管理员在课程操作列执行“下架”操作
 - **THEN** 系统调用 updateCourseAdmin，提交 { id, status: 0 } 并在成功后更新列表状态
 
-### Requirement: 编辑操作在本期保持占位
-系统 MUST 在课程列表操作列保留“编辑”入口，但本期不得进入多表详情编辑流程。
+### Requirement: Course list columns SHALL match updated admin list response
+系统 MUST 映射 `school_name` 字段，且不得在课程列表中展示章节数 (chapter_count) 或 课时数 (total_lesson_count)。
 
-#### Scenario: 点击编辑时仅反馈占位状态
-- **WHEN** 管理员点击课程操作列中的“编辑”
-- **THEN** 系统仅显示“功能建设中”提示或等效占位反馈，不执行详情页编辑逻辑
+#### Scenario: 渲染更新后的列结构
+- **WHEN** 课程列表数据加载完成
+- **THEN** 表格中包含“学校名称”列
+- **THEN** 表格中不再包含“章节数”和“课时数”列
+
+### Requirement: 管理员点击编辑应跳转至课程详情页
+系统 MUST 在管理员点击课程列表操作列中的“编辑”时，跳转至 `/courseDetail?courseId=<id>`，且保持顶栏和侧边栏不卸载。
+
+#### Scenario: 从列表跳转至详情
+- **WHEN** 管理员点击课程 ID 为 `C001` 的操作列“编辑”按钮
+- **THEN** 浏览器路由跳转至 `/courseDetail?courseId=C001`
+- **THEN** 页面在现有管理员布局（TopBar 与 Sidebar）内渲染
+
+### Requirement: 课程详情页应加载并展示基础数据
+系统 SHALL 通过接口 `GET /course/getCourseBasicAdmin/{id}` 拉取详情，并展示包括 ID、学校名称、任课老师等在内的所有基础字段。
+
+#### Scenario: 进入详情页自动加载
+- **WHEN** 携带有效 `courseId` 进入详情页
+- **THEN** 系统调用详情接口并回显所有基础信息
+
+#### Scenario: 路由缺少课程ID
+- **WHEN** 进入详情页但 URL 中不含 `courseId` 参数
+- **THEN** 系统展示错误引导提示并阻止发起详情查询请求
+
+### Requirement: 详情页仅允许编辑核心基础字段
+系统 MUST 仅开放 `name`、`cover_img`、`status` 及 `description` 字段的编辑权限，其余字段均作为只读描述项展示。
+
+#### Scenario: 保存更新时仅提交允许字段
+- **WHEN** 管理员修改名称、状态或任务描述并点击保存
+- **THEN** 系统调用 `PUT /course/updateCourseAdmin` 提交 payload 仅包含 `id`、`name`、`cover_img`、`status`、`description`
+
+### Requirement: 封面图更新必须复用 TempImageUpload 组件
+系统 MUST 使用 `TempImageUpload` 组件处理封面上传，确保异步上传成功后再将路径写入表单。
+
+#### Scenario: 上传封面并保存
+- **WHEN** 用户通过组件上传新图
+- **THEN** 系统获取后端返回的 temp 路径并支持实时预览
