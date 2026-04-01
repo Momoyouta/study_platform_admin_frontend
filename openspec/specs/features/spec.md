@@ -115,3 +115,29 @@
 #### Scenario: 上传封面并保存
 - **WHEN** 用户通过组件上传新图
 - **THEN** 系统获取后端返回的 temp 路径并支持实时预览
+
+## 5. 视频资源管理 (Video Resource Management)
+
+系统 MUST 提供基于分片的视频上传能力，以支持 GB 级大文件的稳定传输。所有视频上传组件 MUST 遵循 `VideoChunkUpload` 的协议规范。
+
+### Requirement: 大文件分片上传与断点续传
+系统 MUST 自动将大视频切分为固定分片 (默认 5MB)，并逐个（串行或并行）发往后端。必须记录所有分片的上传状态以支持网络中断后的进度恢复。
+
+#### Scenario: 重复上传相同文件触发秒传
+- **WHEN** 用户选择一个已完整上传过的文件
+- **THEN** 系统在 `init` 阶段计算全文件 Hash 并匹配到 `filePath`
+- **THEN** 系统跳过所有上传分片与合并请求，立即通过 `onUploadComplete` 返回线上路径
+
+### Requirement: Hash 计算不应阻塞主线程
+系统 MUST 在 Web Worker 中进行 MD5 指纹计算，确保在处理大文件时列表、侧边栏或输入框等 UI 交互绝无卡顿。
+
+#### Scenario: 计算 Hash 时显示加载进度
+- **WHEN** 计算指纹过程中
+- **THEN** 系统在上传区域展示“计算特征值...”状态及百分比进度，且允许用户在计算期间继续编辑表单其他字段
+
+### Requirement: 提供灵活的合并合并触发器 (autoMerge)
+系统 SHALL 支持手动合并模式。当 `autoMerge` 为 `false` 时，组件完成分片上传后进入等待状态，由外部显式调用 `merge()` 方法。
+
+#### Scenario: 等待表单确认后再合并
+- **WHEN** `autoMerge=false` 且所有分片上传完毕
+- **THEN** 系统进入 `WAITING_MERGE` 状态，合并请求（及最终资源挂载）需等待外部指令

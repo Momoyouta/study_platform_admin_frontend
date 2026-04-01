@@ -1,6 +1,7 @@
 import http from "./http.js";
 import type { CreateInviteDto } from "@/type/invite";
 import type { CourseListParams, CreateCourseDto, UpdateCourseDto, UpdateCourseCoverDto } from "../type/course";
+import type { InitChunkDto, MergeChunkDto } from "@/type/file";
 
 export const login = (account: string, pwd: string) => {
     return http.post('/auth/admin/login', {
@@ -81,6 +82,37 @@ export const uploadImageTemp = (file: File) => {
     const formData = new FormData();
     formData.append('file', file);
     return http.post('/file/upload/imageTemp', formData, { headers: { 'Content-Type': 'multipart/form-data' } });
+}
+
+// ================= 文件管理 (File) =================
+/**
+ * 初始化分片上传
+ */
+export const initChunkUpload = (data: InitChunkDto) => {
+    return http.post('/file/chunk/init', data);
+}
+
+/**
+ * 上传单个分片
+ */
+export const uploadChunk = (formData: FormData) => {
+    return http.post('/file/chunk/upload', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+    });
+}
+
+/**
+ * 查询分片上传进度
+ */
+export const getChunkProgress = (fileHash: string) => {
+    return http.get(`/file/chunk/progress/${fileHash}`);
+}
+
+/**
+ * 合并所有分片
+ */
+export const mergeChunks = (data: MergeChunkDto) => {
+    return http.post('/file/chunk/merge', data);
 }
 
 // ================= 用户管理 (User) =================
