@@ -14,7 +14,7 @@ import {
     Alert
 } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
-import { getCourseBasicAdmin, updateCourseAdmin } from '@/http/api.ts';
+import { getCourseBasicAdmin, updateCourseAdmin, updateCourseCoverAdmin } from '@/http/api.ts';
 import TempImageUpload from '@/components/TempImageUpload';
 import moment from 'moment';
 import TaskEditor from './TaskEditor';
@@ -70,16 +70,31 @@ const CourseDetail = () => {
         try {
             const values = await form.validateFields();
             setSaving(true);
+            
+            // 先提交封面（如果有新值）
+            if (values.cover_img) {
+                const coverPayload = {
+                    id: courseId,
+                    temp_path: values.cover_img,
+                };
+                const coverRes = await updateCourseCoverAdmin(coverPayload);
+                if (coverRes.code !== 200 && !coverRes.success) {
+                    message.error(coverRes.msg || '封面更新失败');
+                    setSaving(false);
+                    return;
+                }
+            }
+            
+            // 再提交基础信息
             const payload = {
                 id: courseId,
                 name: values.name,
                 status: values.status,
-                cover_img: values.cover_img,
             };
             const res = await updateCourseAdmin(payload);
             if (res.code === 200 || res.success) {
                 message.success('保存成功');
-                fetchDetail(); // 刷新详情
+                fetchDetail();
             } else {
                 message.error(res.msg || '保存失败');
             }

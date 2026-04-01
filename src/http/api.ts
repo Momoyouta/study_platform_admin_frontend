@@ -1,6 +1,6 @@
 import http from "./http.js";
 import type { CreateInviteDto } from "@/type/invite";
-import type { CourseListParams, CreateCourseDto, UpdateCourseDto } from "../type/course";
+import type { CourseListParams, CreateCourseDto, UpdateCourseDto, UpdateCourseCoverDto } from "../type/course";
 
 export const login = (account: string, pwd: string) => {
     return http.post('/auth/admin/login', {
@@ -160,6 +160,10 @@ export const createCourseAdmin = (data: CreateCourseDto) => {
 
 export const updateCourseAdmin = (data: UpdateCourseDto) => {
     return http.put('/course/updateCourseAdmin', data);
+}
+
+export const updateCourseCoverAdmin = (data: UpdateCourseCoverDto) => {
+    return http.put('/course/updateCourseCoverAdmin', data);
 }
 
 export const getCourseBasicAdmin = (id: string | number) => {

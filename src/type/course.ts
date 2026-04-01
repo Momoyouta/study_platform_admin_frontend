@@ -15,6 +15,11 @@ export interface UpdateCourseDto {
   status?: CourseStatus;
 }
 
+export interface UpdateCourseCoverDto {
+  id: string;
+  temp_path: string;
+}
+
 export interface CourseListParams {
   page?: number;
   pageSize?: number;
