@@ -1,4 +1,4 @@
-import { useState, useImperativeHandle, forwardRef } from 'react';
+import { useEffect, useState, useImperativeHandle, forwardRef } from 'react';
 import { Upload, Progress, message, Button, Space, Typography } from 'antd';
 import {
     CloudUploadOutlined,
@@ -70,6 +70,23 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
         fileHash: string;
         fileName: string;
     } | null>(null);
+
+    useEffect(() => {
+        if (previewPath) {
+            const fileName = previewPath.split('/').pop() || '';
+            setStatus(UploadStatus.SUCCESS);
+            setStatusText('视频已挂载');
+            setProgress(100);
+            setCurrentFileName(fileName);
+            return;
+        }
+
+        setStatus(UploadStatus.IDLE);
+        setStatusText('');
+        setProgress(0);
+        setCurrentFileName('');
+        setUploadInfo(null);
+    }, [previewPath]);
 
     // 暴露给外部的合并方法
     const manualMerge = async () => {

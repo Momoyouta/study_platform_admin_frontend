@@ -1,12 +1,22 @@
-import React, { useEffect } from 'react';
-import { Drawer, Form, Input, Button, message, Space } from 'antd';
+import React, { useEffect, useState } from 'react';
+import { Button, Drawer, Form, Input, Modal, Space, Tooltip, message } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import VideoChunkUpload from '@/components/VideoChunkUpload';
 
 const { TextArea } = Input;
 
-const LessonEditorDrawer = ({ visible, lesson, onClose, onSave }) => {
+const buildResourceState = (lesson) => ({
+  resource_id: lesson?.resource_id ?? null,
+  resource_name: lesson?.resource_name || '',
+});
+
+const LessonEditorDrawer = ({ visible, lesson, onClose, onChange, onSave, onImmediateSave }) => {
   const [form] = Form.useForm();
+  const [resourceState, setResourceState] = useState(() => buildResourceState(lesson));
+  const canImmediateSave = !String(lesson?.lesson_id || '').startsWith('temp') && !String(lesson?.chapterId || '').startsWith('temp');
+  const immediateSaveTip = canImmediateSave
+    ? '立刻保存会立即更新并发布该课时。'
+    : '立刻保存会立即更新并发布该课时，未发布内容不可立刻保存。';
 
   useEffect(() => {
     if (visible && lesson) {
@@ -19,11 +29,40 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onSave }) => {
     }
   }, [visible, lesson, form]);
 
-  const handleSave = async () => {
+  const handleLocalSave = async () => {
     try {
       const values = await form.validateFields();
-      onSave({ ...lesson, ...values });
-      message.success('课时已更新');
+
+      await onSave({
+        ...lesson,
+        ...values,
+        ...resourceState,
+      });
+
+      message.success('课时已保存');
+    } catch (error) {
+      console.error('Validation Error:', error);
+    }
+  };
+
+  const handleImmediateSave = async () => {
+    try {
+      await form.validateFields();
+
+      Modal.confirm({
+        title: '立刻保存课时',
+        content: '该操作会立马发布该更新，确认后将直接保存并关闭编辑弹层。',
+        okText: '确认保存',
+        cancelText: '取消',
+        centered: true,
+        onOk: async () => {
+          await onImmediateSave({
+            ...lesson,
+            ...form.getFieldsValue(),
+            ...resourceState,
+          });
+        },
+      });
     } catch (error) {
       console.error('Validation Error:', error);
     }
@@ -35,21 +74,30 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onSave }) => {
       resource_id: `res_mock_${Date.now()}`,
       resource_name: 'mock_video_selected.mp4'
     };
-    onSave({ ...lesson, ...form.getFieldsValue(), ...mockFile });
+    const nextLesson = {
+      ...lesson,
+      ...form.getFieldsValue(),
+      ...mockFile,
+    };
+    setResourceState(mockFile);
+    onChange(nextLesson);
     message.success(`已选择依赖视频: ${mockFile.resource_name}`);
   };
 
   const handleChunkUploadSuccess = (path) => {
     const fileName = path.split('/').pop() || 'video.mp4';
-    onSave({
+    const nextLesson = {
       ...lesson,
       ...form.getFieldsValue(),
       resource_id: path,
       resource_name: fileName
+    };
+    setResourceState({
+      resource_id: path,
+      resource_name: fileName,
     });
+    onChange(nextLesson);
   };
-
-  const isMounted = !!(lesson?.resource_id);
 
   return (
     <Drawer
@@ -62,9 +110,16 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onSave }) => {
         <div style={{ textAlign: 'right', padding: '10px 0' }}>
           <Space>
             <Button onClick={onClose}>取消</Button>
-            <Button type="primary" onClick={handleSave} icon={<SaveOutlined />}>
+            <Button type="primary" onClick={handleLocalSave} icon={<SaveOutlined />}>
               保存课时
             </Button>
+            <Tooltip title={immediateSaveTip} placement="top">
+              <span>
+                <Button onClick={handleImmediateSave} icon={<SaveOutlined />} disabled={!canImmediateSave}>
+                  立刻保存
+                </Button>
+              </span>
+            </Tooltip>
           </Space>
         </div>
       }
@@ -90,7 +145,7 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onSave }) => {
         <VideoChunkUpload
           onChange={handleChunkUploadSuccess}
           scenario="temp_video"
-          previewPath={lesson?.resource_id}
+          previewPath={resourceState?.resource_id}
           buttonText="上传教学视频"
           style={{ width: '100%', marginBottom: '16px' }}
         />

@@ -1,12 +1,10 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Typography } from 'antd';
-import { HolderOutlined, PlusOutlined } from '@ant-design/icons';
+import { Button, Input, Space, Tooltip } from 'antd';
+import { HolderOutlined, PlusOutlined, SaveOutlined } from '@ant-design/icons';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import LessonItem from './LessonItem';
-
-const { Text } = Typography;
 
 const toChineseNum = (num) => {
   const cnNums = ['零', '一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
@@ -20,7 +18,8 @@ const toChineseNum = (num) => {
   return num;
 };
 
-const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapter, onEditLesson }) => {
+const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapter, onEditLesson, savingChapterId }) => {
+  const [titleDraft, setTitleDraft] = useState(chapter.title);
   const {
     attributes,
     listeners,
@@ -42,6 +41,24 @@ const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapter, onEditLesso
   };
 
   const lessonIds = chapter.lessons?.map(l => l.lesson_id) || [];
+  const isSaving = savingChapterId === chapter.chapter_id;
+  const canImmediateSave = !String(chapter.chapter_id || '').startsWith('temp');
+  const immediateSaveTip = canImmediateSave
+    ? '立刻保存会立即更新并发布该章节。'
+    : '立刻保存会立即更新并发布该章节，未发布内容不可立刻保存。';
+
+  useEffect(() => {
+    setTitleDraft(chapter.title);
+  }, [chapter.title]);
+
+  const handleSaveTitle = () => {
+    const nextTitle = titleDraft.trim();
+    if (!nextTitle || nextTitle === chapter.title) {
+      return;
+    }
+
+    onRenameChapter(chapter.chapter_id, nextTitle);
+  };
 
   return (
     <div className="chapter-item-wrapper" ref={setNodeRef} style={style}>
@@ -50,15 +67,32 @@ const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapter, onEditLesso
           <HolderOutlined />
         </div>
         <div className="chapter-title">
-          <span style={{ marginRight: 8, whiteSpace: 'nowrap' }}>第{toChineseNum(index + 1)}章：</span>
-          <Text 
-            editable={{ onChange: (val) => onRenameChapter(chapter.chapter_id, val) }}
-          >
-            {chapter.title}
-          </Text>
+          <span className="chapter-title-prefix">第{toChineseNum(index + 1)}章：</span>
+          <Space className="chapter-title-editor" size={8}>
+            <Input
+              value={titleDraft}
+              onChange={(event) => setTitleDraft(event.target.value)}
+              placeholder="请输入章节标题"
+              maxLength={255}
+              className="chapter-title-input"
+            />
+            <Tooltip title={immediateSaveTip} placement="top">
+              <span>
+                <Button
+                  type="primary"
+                  icon={<SaveOutlined />}
+                  loading={isSaving}
+                  onClick={handleSaveTitle}
+                  disabled={!canImmediateSave || !titleDraft.trim() || titleDraft.trim() === chapter.title}
+                >
+                  立刻保存
+                </Button>
+              </span>
+            </Tooltip>
+          </Space>
         </div>
         <div className="chapter-extra">
-          包含{lessonIds.length}个课时
+          包含 {lessonIds.length} 个课时
         </div>
       </div>
       

@@ -1,9 +1,4 @@
-# course-outline-manage Specification
-
-## Purpose
-TBD - created by archiving change update-course-detail-outline-page. Update Purpose after archive.
-
-## Requirements
+## ADDED Requirements
 
 ### Requirement: 大纲草稿保存与导入已发布大纲
 系统 MUST 支持管理员将当前课程大纲保存为草稿，并提供“导入已发布大纲”能力以恢复服务端最新可见大纲。
@@ -62,4 +57,3 @@ TBD - created by archiving change update-course-detail-outline-page. Update Purp
 #### Scenario: 视频上传成功时保持弹层打开
 - **WHEN** 用户在课时编辑弹层完成视频上传且上传成功
 - **THEN** 系统 MUST 仅更新当前课时的视频资源字段与反馈信息，不自动关闭课时编辑弹层。
-

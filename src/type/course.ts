@@ -47,3 +47,105 @@ export interface CourseListResponseDto {
   list: CourseListItem[];
   total: number;
 }
+
+export interface CourseOutlineLessonDto {
+  lesson_id: string;
+  title: string;
+  description?: string;
+  resource_id?: string | null;
+  resource_name?: string;
+  sort_order: number;
+  duration: number;
+}
+
+export interface CourseOutlineChapterDto {
+  chapter_id: string;
+  title: string;
+  sort_order: number;
+  lessons: CourseOutlineLessonDto[];
+}
+
+export interface CourseOutlineDraftDto {
+  course_id: string;
+  school_id: string;
+  status: CourseStatus;
+  chapters: CourseOutlineChapterDto[];
+}
+
+export type CourseOutlineSource = 'draft' | 'published';
+
+export type CourseOutlineDraftContent = Partial<CourseOutlineDraftDto> & {
+  chapters: CourseOutlineChapterDto[];
+};
+
+export interface SaveCourseDraftDto {
+  course_id: string;
+  draft_content: CourseOutlineDraftContent;
+}
+
+export interface SaveCourseDraftResponseDto {
+  course_id: string;
+  updated: boolean;
+}
+
+export interface PublishIdMappingItemDto {
+  temp_id: string;
+  real_id: string;
+}
+
+export interface PublishIdMappingsDto {
+  chapters: PublishIdMappingItemDto[];
+  lessons: PublishIdMappingItemDto[];
+}
+
+export interface PublishCourseOutlineDto {
+  course_id: string;
+  draft_content: CourseOutlineDraftContent;
+}
+
+export interface PublishCourseOutlineResponseDto {
+  course_id: string;
+  published: boolean;
+  chapter_count: number;
+  lesson_count: number;
+  id_mappings: PublishIdMappingsDto;
+}
+
+export interface ChapterQuickUpdateDto {
+  chapter_id: string;
+  title: string;
+}
+
+export interface QuickUpdateChapterTitleDto {
+  course_id: string;
+  draft_content: CourseOutlineDraftContent;
+  chapter: ChapterQuickUpdateDto;
+}
+
+export interface QuickUpdateChapterTitleResponseDto {
+  course_id: string;
+  chapter_id: string;
+  updated: boolean;
+}
+
+export interface LessonQuickUpdateDto {
+  lesson_id: string;
+  chapter_id: string;
+  title: string;
+  description?: string;
+  resource_id?: string | null;
+  duration: number;
+  sort_order: number;
+}
+
+export interface QuickUpdateLessonDto {
+  course_id: string;
+  draft_content: CourseOutlineDraftContent;
+  lesson: LessonQuickUpdateDto;
+}
+
+export interface QuickUpdateLessonResponseDto {
+  course_id: string;
+  lesson_id: string;
+  updated: boolean;
+}

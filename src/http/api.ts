@@ -1,6 +1,16 @@
 import http from "./http.js";
 import type { CreateInviteDto } from "@/type/invite";
-import type { CourseListParams, CreateCourseDto, UpdateCourseDto, UpdateCourseCoverDto } from "../type/course";
+import type {
+    CourseListParams,
+    CreateCourseDto,
+    CourseOutlineSource,
+    PublishCourseOutlineDto,
+    QuickUpdateChapterTitleDto,
+    QuickUpdateLessonDto,
+    SaveCourseDraftDto,
+    UpdateCourseDto,
+    UpdateCourseCoverDto
+} from "../type/course";
 import type { InitChunkDto, MergeChunkDto } from "@/type/file";
 
 export const login = (account: string, pwd: string) => {
@@ -204,6 +214,26 @@ export const getCourseBasicAdmin = (id: string | number) => {
 
 export const getCourseDescriptionAdmin = (id: string | number) => {
     return http.get(`/course/getCourseDescription/${id}`);
+}
+
+export const saveCourseDraftAdmin = (data: SaveCourseDraftDto) => {
+    return http.post('/course/saveCourseDraftAdmin', data);
+}
+
+export const publishCourseOutlineAdmin = (data: PublishCourseOutlineDto) => {
+    return http.post('/course/publishCourseOutlineAdmin', data);
+}
+
+export const getCourseLessonOutline = (id: string | number, source?: CourseOutlineSource) => {
+    return http.get(`/course/getCourseLessonOutline/${id}`, source ? { params: { source } } : undefined);
+}
+
+export const updateChapterTitleQuickAdmin = (data: QuickUpdateChapterTitleDto) => {
+    return http.put('/course/updateChapterTitleQuickAdmin', data);
+}
+
+export const updateLessonQuickAdmin = (data: QuickUpdateLessonDto) => {
+    return http.put('/course/updateLessonQuickAdmin', data);
 }
 
 // ================= 额外补充 =================
