@@ -108,24 +108,26 @@ const StudentList = observer(() => {
             });
     };
 
+    const getStudentDisplayId = (record) => record?.studentId || record?.student_id || record?.id;
+
     const columns = [
         {
             title: 'ID',
-            dataIndex: 'id',
-            key: 'id',
+            dataIndex: 'student_id',
+            key: 'student_id',
             width: 120,
             ellipsis: true,
-            render: (text, record) => {
-                const id = text || record.userId;
+            render: (_, record) => {
+                const id = getStudentDisplayId(record);
                 return (
                     <a
                         style={{ display: 'block', maxWidth: 100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                         onClick={() => {
-                            navigator.clipboard.writeText(id);
+                            navigator.clipboard.writeText(String(id || ''));
                             message.success('ID已复制');
                         }}
                     >
-                        {id}
+                        {id || '-'}
                     </a>
                 );
             }

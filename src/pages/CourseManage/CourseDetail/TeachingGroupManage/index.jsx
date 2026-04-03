@@ -602,9 +602,10 @@ const TeachingGroupManage = ({ courseId, schoolId }) => {
             message.error('复制失败，请手动复制');
         }
     };
-
-    const handleCopyInviteCode = (code) => {
-        handleCopyText(code, '邀请码已复制', '当前教学组暂无邀请码');
+    
+    const handleCopy = (value) => {
+      navigator.clipboard.writeText(value);
+      message.success('已复制');
     };
 
     const columns = [
@@ -612,16 +613,14 @@ const TeachingGroupManage = ({ courseId, schoolId }) => {
             title: '教学组ID',
             dataIndex: 'id',
             key: 'id',
-            width: 180,
+            width: 130,
             ellipsis: true,
             render: (value) => (
-                <Button
-                    type="link"
-                    className="inline-link-button"
-                    onClick={() => handleCopyText(value, '教学组ID已复制')}
+                <a style={{width: '120px', textOverflow: 'ellipsis', overflow: 'hidden', display: 'inline-block'}}
+                    onClick={() => handleCopy(value)}
                 >
                     {value}
-                </Button>
+                </a>
             ),
         },
         {
@@ -662,14 +661,12 @@ const TeachingGroupManage = ({ courseId, schoolId }) => {
 
                 return (
                     <Space direction="vertical" size={0}>
-                        {!inviteMeta.expired && <Button
-                            type="link"
-                            className="inline-link-button"
-                            icon={<CopyOutlined />}
-                            onClick={() => handleCopyInviteCode(inviteMeta.code)}
-                        >
-                            {inviteMeta.code}
-                        </Button>}
+                        {!inviteMeta.expired && 
+                          <a style={{width: '120px', textOverflow: 'ellipsis', overflow: 'hidden', display: 'inline-block', textWrap: 'nowrap'}}
+                              onClick={() => handleCopy(inviteMeta.code)}
+                          >
+                              {inviteMeta.code}
+                          </a>}
                         {canCreateInvite && (
                             <Button
                                 type="link"
