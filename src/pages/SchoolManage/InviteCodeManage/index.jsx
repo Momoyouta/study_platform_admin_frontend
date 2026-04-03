@@ -172,7 +172,7 @@ const InviteCodeManage = observer(() => {
             width: 120,
             ellipsis: true,
             render: (text) => (
-                <a
+                <a style={{width: '120px', textOverflow: 'ellipsis', overflow: 'hidden', display: 'inline-block'}}
                     onClick={() => {
                         navigator.clipboard.writeText(text);
                         message.success('邀请码已复制');
