@@ -48,6 +48,136 @@ export interface CourseListResponseDto {
   total: number;
 }
 
+export interface CourseBasicAdminDto {
+  id: string;
+  school_id: string;
+  school_name?: string;
+  creator_id?: string;
+  creator_name?: string;
+  name: string;
+  status: CourseStatus;
+  cover_img?: string;
+  description?: string;
+  teacher_names?: string[];
+  teacher_ids?: string[];
+  teaching_group_id?: string;
+  teaching_group?: string;
+  invitation_code?: string | null;
+  invitation_create_time?: string | null;
+  invitation_ttl?: number | null;
+  create_time?: string;
+  update_time?: string;
+}
+
+export interface SchoolTeacherByNameParams {
+  school_id?: string;
+  name: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface SchoolTeacherSimpleDto {
+  id: string;
+  name: string;
+}
+
+export interface SchoolTeacherByNameResponseDto {
+  list: SchoolTeacherSimpleDto[];
+  total: number;
+}
+
+export interface BindTeachingGroupTeachersDto {
+  course_id: string;
+  teaching_group_id: string;
+  teacher_ids: string[];
+}
+
+export interface BindTeachingGroupTeachersResponseDto {
+  course_id: string;
+  teaching_group_id: string;
+  teacher_ids: string[];
+  updated: true;
+}
+
+export interface CreateCourseInviteDto {
+  school_id?: string;
+  course_id: string;
+  teaching_group_id: string;
+  ttl?: number;
+}
+
+export interface CreateCourseInviteResponseDto {
+  code: string;
+  type: number;
+  course_id: string;
+  teaching_group_id: string;
+  createTime: string;
+  ttl?: number | null;
+  expire_time?: string | null;
+}
+
+export interface CreateTeachingGroupAdminDto {
+  course_id: string;
+  name: string;
+}
+
+export interface CreateTeachingGroupAdminResponseDto {
+  id: string;
+  course_id: string;
+  name: string;
+  invite_code: string;
+}
+
+export interface TeachingGroupTeacherDto {
+  id: string;
+  name: string;
+}
+
+export interface TeachingGroupItemDto {
+  id: string;
+  course_id: string;
+  name: string;
+  invite_code?: string;
+  create_time?: string;
+  createTime?: string;
+  ttl?: number | null;
+  teachers?: Array<TeachingGroupTeacherDto | string>;
+  teacher_ids?: string[];
+  teacher_names?: string[];
+  invitation_create_time?: string | null;
+  invitation_ttl?: number | null;
+  expire_time?: string | null;
+}
+
+export interface ListTeachingGroupAdminParams {
+  course_id: string;
+  name?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface ListTeachingGroupAdminResponseDto {
+  list: TeachingGroupItemDto[];
+  total: number;
+}
+
+export interface GetTeachingGroupAdminResponseDto extends TeachingGroupItemDto {}
+
+export interface UpdateTeachingGroupAdminDto {
+  teaching_group_id: string;
+  name: string;
+}
+
+export interface UpdateTeachingGroupAdminResponseDto {
+  id: string;
+  updated: boolean;
+}
+
+export interface DeleteTeachingGroupAdminResponseDto {
+  id: string;
+  deleted: boolean;
+}
+
 export interface CourseOutlineLessonDto {
   lesson_id: string;
   title: string;

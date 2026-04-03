@@ -11,7 +11,7 @@ import {
     Descriptions,
     Space,
     Divider,
-    Alert
+    Alert,
 } from 'antd';
 import { ArrowLeftOutlined, SaveOutlined } from '@ant-design/icons';
 import { getCourseBasicAdmin, updateCourseAdmin, updateCourseCoverAdmin } from '@/http/api.ts';
@@ -19,6 +19,7 @@ import TempImageUpload from '@/components/TempImageUpload';
 import moment from 'moment';
 import TaskEditor from './TaskEditor';
 import CourseOutline from './ChapterEditor';
+import TeachingGroupManage from './TeachingGroupManage';
 import './index.less';
 
 const { TabPane } = Tabs;
@@ -40,6 +41,7 @@ const CourseDetail = () => {
             setError('课程ID缺失');
             return;
         }
+
         setLoading(true);
         try {
             const res = await getCourseBasicAdmin(courseId);
@@ -70,8 +72,7 @@ const CourseDetail = () => {
         try {
             const values = await form.validateFields();
             setSaving(true);
-            
-            // 先提交封面（如果有新值）
+
             if (values.cover_img) {
                 const coverPayload = {
                     id: courseId,
@@ -84,23 +85,23 @@ const CourseDetail = () => {
                     return;
                 }
             }
-            
-            // 再提交基础信息
+
             const payload = {
                 id: courseId,
                 name: values.name,
                 status: values.status,
             };
-            const res = await updateCourseAdmin(payload);
-            if (res.code === 200 || res.success) {
+
+            const updateRes = await updateCourseAdmin(payload);
+            if (updateRes.code === 200 || updateRes.success) {
                 message.success('保存成功');
                 fetchDetail();
             } else {
-                message.error(res.msg || '保存失败');
+                message.error(updateRes.msg || '保存失败');
             }
         } catch (err) {
             console.error('Save course basic info failed:', err);
-            if (err.errorFields) {
+            if (err?.errorFields) {
                 message.warning('请检查输入项');
             } else {
                 message.error('保存接口异常');
@@ -216,6 +217,16 @@ const CourseDetail = () => {
                         </Form>
                     </div>
                 </TabPane>
+
+                <TabPane tab="教学组管理" key="teaching-groups">
+                    <div className="tab-content teaching-group-tab">
+                        <TeachingGroupManage
+                            courseId={courseId}
+                            schoolId={courseData?.school_id}
+                        />
+                    </div>
+                </TabPane>
+
                 <TabPane tab="章节课时" key="chapters">
                     <div className="tab-content outline-tab">
                         <CourseOutline courseId={courseId} />

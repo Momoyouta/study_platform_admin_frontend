@@ -1,13 +1,19 @@
 import http from "./http.js";
 import type { CreateInviteDto } from "@/type/invite";
 import type {
+    BindTeachingGroupTeachersDto,
     CourseListParams,
+    CreateCourseInviteDto,
     CreateCourseDto,
+    CreateTeachingGroupAdminDto,
     CourseOutlineSource,
+    ListTeachingGroupAdminParams,
     PublishCourseOutlineDto,
     QuickUpdateChapterTitleDto,
     QuickUpdateLessonDto,
     SaveCourseDraftDto,
+    SchoolTeacherByNameParams,
+    UpdateTeachingGroupAdminDto,
     UpdateCourseDto,
     UpdateCourseCoverDto
 } from "../type/course";
@@ -210,6 +216,38 @@ export const updateCourseCoverAdmin = (data: UpdateCourseCoverDto) => {
 
 export const getCourseBasicAdmin = (id: string | number) => {
     return http.get(`/course/getCourseBasicAdmin/${id}`);
+}
+
+export const querySchoolTeacherByNameAdmin = (params: SchoolTeacherByNameParams) => {
+    return http.get('/course/querySchoolTeacherByNameAdmin', { params });
+}
+
+export const bindTeachingGroupTeachersAdmin = (data: BindTeachingGroupTeachersDto) => {
+    return http.put('/course/bindTeachingGroupTeachersAdmin', data);
+}
+
+export const createCourseInviteAdmin = (data: CreateCourseInviteDto) => {
+    return http.post('/admin/invite/createCourseInviteAdmin', data);
+}
+
+export const createTeachingGroupAdmin = (data: CreateTeachingGroupAdminDto) => {
+    return http.post('/course/createTeachingGroupAdmin', data);
+}
+
+export const listTeachingGroupAdmin = (params: ListTeachingGroupAdminParams) => {
+    return http.get('/course/listTeachingGroupAdmin', { params });
+}
+
+export const getTeachingGroupAdmin = (id: string) => {
+    return http.get(`/course/getTeachingGroupAdmin/${id}`);
+}
+
+export const updateTeachingGroupAdmin = (data: UpdateTeachingGroupAdminDto) => {
+    return http.put('/course/updateTeachingGroupAdmin', data);
+}
+
+export const deleteTeachingGroupAdmin = (id: string) => {
+    return http.delete(`/course/deleteTeachingGroupAdmin/${id}`);
 }
 
 export const getCourseDescriptionAdmin = (id: string | number) => {
