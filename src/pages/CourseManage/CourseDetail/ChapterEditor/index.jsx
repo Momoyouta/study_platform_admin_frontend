@@ -358,8 +358,35 @@ const CourseOutline = ({ courseId }) => {
     });
   };
 
+  const patchChapterTitleInDraft = useCallback((chapterId, newTitle) => {
+    const nextTitle = String(newTitle || '').trim();
+    if (!nextTitle) {
+      return;
+    }
+
+    setOutlineDraft((prev) => {
+      if (!prev) {
+        return prev;
+      }
+
+      return reindexCourseOutlineDraft({
+        ...prev,
+        chapters: prev.chapters.map((chapter) => (
+          chapter.chapter_id === chapterId
+            ? { ...chapter, title: nextTitle }
+            : chapter
+        )),
+      });
+    });
+  }, []);
+
   const handleRenameChapter = async (chapterId, newTitle) => {
     if (!outlineDraft || !courseId) {
+      return;
+    }
+
+    const nextTitle = String(newTitle || '').trim();
+    if (!nextTitle) {
       return;
     }
 
@@ -367,7 +394,7 @@ const CourseOutline = ({ courseId }) => {
       ...outlineDraft,
       chapters: outlineDraft.chapters.map((chapter) => (
         chapter.chapter_id === chapterId
-          ? { ...chapter, title: newTitle }
+          ? { ...chapter, title: nextTitle }
           : chapter
       )),
     });
@@ -380,7 +407,7 @@ const CourseOutline = ({ courseId }) => {
         draft_content: nextDraft,
         chapter: {
           chapter_id: chapterId,
-          title: targetChapter?.title || newTitle,
+          title: targetChapter?.title || nextTitle,
         },
       });
 
@@ -656,6 +683,7 @@ const CourseOutline = ({ courseId }) => {
                         chapter={chapter}
                         index={index}
                         onAddLesson={handleAddLesson}
+                        onRenameChapterDraft={patchChapterTitleInDraft}
                         onRenameChapter={handleRenameChapter}
                         onEditLesson={handleEditLesson}
                         savingChapterId={savingChapterId}

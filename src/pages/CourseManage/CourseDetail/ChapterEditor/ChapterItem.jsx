@@ -18,7 +18,7 @@ const toChineseNum = (num) => {
   return num;
 };
 
-const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapter, onEditLesson, savingChapterId }) => {
+const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapterDraft, onRenameChapter, onEditLesson, savingChapterId }) => {
   const [titleDraft, setTitleDraft] = useState(chapter.title);
   const {
     attributes,
@@ -53,11 +53,20 @@ const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapter, onEditLesso
 
   const handleSaveTitle = () => {
     const nextTitle = titleDraft.trim();
-    if (!nextTitle || nextTitle === chapter.title) {
+    if (!nextTitle) {
       return;
     }
 
     onRenameChapter(chapter.chapter_id, nextTitle);
+  };
+
+  const handleBlurTitle = () => {
+    const nextTitle = titleDraft.trim();
+    if (!nextTitle) {
+      return;
+    }
+
+    onRenameChapterDraft(chapter.chapter_id, nextTitle);
   };
 
   return (
@@ -72,6 +81,8 @@ const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapter, onEditLesso
             <Input
               value={titleDraft}
               onChange={(event) => setTitleDraft(event.target.value)}
+              onBlur={handleBlurTitle}
+              onPressEnter={handleBlurTitle}
               placeholder="请输入章节标题"
               maxLength={255}
               className="chapter-title-input"
@@ -83,7 +94,7 @@ const ChapterItem = ({ chapter, index, onAddLesson, onRenameChapter, onEditLesso
                   icon={<SaveOutlined />}
                   loading={isSaving}
                   onClick={handleSaveTitle}
-                  disabled={!canImmediateSave || !titleDraft.trim() || titleDraft.trim() === chapter.title}
+                  disabled={!canImmediateSave || !titleDraft.trim()}
                 >
                   立刻保存
                 </Button>
