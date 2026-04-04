@@ -27,7 +27,8 @@ export default defineConfig(({ mode }) => {
     },
     envDir: './src/env',
     server: {
-        port: 8081,
+        host: env.VITE_HOST, // 允许局域网访问
+        port: 8081, 
         proxy: {
             // 将所有以 /api 开头的请求转发到目标服务器
             '/api': {
@@ -36,6 +37,9 @@ export default defineConfig(({ mode }) => {
                 rewrite: (path) => path.replace(/^\/api/, ''), // 重写路径：去掉 /api 前缀
             },
         },
+        allowedHosts: [
+            'admin.momostudy.test',
+        ],
     },
   }
 })
