@@ -20,22 +20,40 @@
 ## 目录结构
 
 ```text
-E:\毕设\study_platform_frontend\
+E:\毕设\study_platform_admin_frontend\
 ├── src/
 │   ├── assets/             # 静态资源 (图片、图标等)
 │   ├── components/         # 通用业务组件
+│   │   ├── Sidebar/
+│   │   ├── TopBar/
+│   │   ├── UserEditModal/
+│   │   └── VideoChunkUpload/
 │   ├── config/             # 项目配置文件
 │   ├── env/                # 环境变量配置 (.env.dev, .env.prod)
 │   ├── http/               # 网络请求配置及封装
-│   ├── pages/              # 页面级组件 (Home, Login 等)
+│   ├── pages/              # 页面级组件
+│   │   ├── CourseManage/   # 课程管理 (分类/详情/列表)
+│   │   ├── SchoolManage/   # 学校管理
+│   │   ├── UserManage/     # 用户管理
+│   │   ├── Dashboard/
+│   │   ├── Home/
+│   │   └── Login/
 │   ├── router/             # 路由配置
 │   ├── store/              # MobX 状态管理
 │   ├── theme/              # 主题样式及全局变量 (Less)
+│   ├── type/               # TypeScript 类型定义与映射
+│   ├── utils/              # 工具函数
 │   ├── App.jsx             # 根组件
 │   └── main.jsx            # 入口文件
 ├── public/                 # 公共静态资源
 ├── openspec/               # 项目规范及任务管理
+│   ├── changes/            # 变更提案与归档
+│   │   └── archive/
+│   ├── specs/              # 生效中的规范
+│   └── config.yaml
+├── deploy_frontend.ps1     # 部署脚本
 ├── package.json            # 项目依赖及脚本
+├── vite.config.js          # Vite 配置
 └── tsconfig.json           # TypeScript 配置
 ```
 
