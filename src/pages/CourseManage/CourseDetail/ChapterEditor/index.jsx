@@ -347,7 +347,7 @@ const CourseOutline = ({ courseId }) => {
                 title: '新建课时',
                 description: '',
                 sort_order: chapter.lessons.length + 1,
-                resource_id: null,
+                video_path: null,
                 resource_name: '',
                 duration: 0
               }
@@ -501,7 +501,7 @@ const CourseOutline = ({ courseId }) => {
           chapter_id: updatedLesson.chapterId,
           title: updatedLesson.title,
           description: updatedLesson.description || '',
-          resource_id: updatedLesson.resource_id ?? null,
+          video_path: updatedLesson.video_path ?? null,
           duration: typeof updatedLesson.duration === 'number' ? updatedLesson.duration : (currentLesson?.duration || 0),
           sort_order: typeof currentLesson?.sort_order === 'number' ? currentLesson.sort_order : (updatedLesson.sort_order || 1),
         },

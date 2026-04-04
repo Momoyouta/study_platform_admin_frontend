@@ -9,7 +9,7 @@
 
 - [x] 2.1 在 `CourseOutline` 内部开发大框架渲染（章节列表区、页头等），实现“添加新章节”事件处理（向 state 中添加一个新章节并更新视图）。
 - [x] 2.2 开发独立的 `ChapterItem` 的渲染，包含该章节的 Title 以及其内部子数组 `lessons` 的遍历渲染。
-- [x] 2.3 实现 `LessonItem` 的样式与布局，右侧根据 `resource_id` 是否为 null 显示“已挂载: {name}”标签（蓝色）或“未挂载”警戒标签（红色）。
+- [x] 2.3 实现 `LessonItem` 的样式与布局，右侧根据 `video_path` 是否为 null 显示“已挂载: {name}”标签（蓝色）或“未挂载”警戒标签（红色）。
 - [x] 2.4 实现每个章节下部的“添加课时”交互按钮，点击后向本章节的 lessons 数组追加一个新的空课时记录。
 - [x] 2.5 利用 `@dnd-kit` 为章节列表(`ChapterList`)配置 `SortableContext`，实现基于 Drag Handle 的一次级(章节)拖拽排序逻辑。
 - [x] 2.6 为内部课时列表(`LessonList`)配置二级的 `SortableContext`，实现基于 Drag Handle 的课时拖拽排序逻辑，并处理嵌套拖拽事件防止冲突。

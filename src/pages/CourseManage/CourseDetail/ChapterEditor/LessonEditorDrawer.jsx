@@ -6,7 +6,7 @@ import VideoChunkUpload from '@/components/VideoChunkUpload';
 const { TextArea } = Input;
 
 const buildResourceState = (lesson) => ({
-  resource_id: lesson?.resource_id ?? null,
+  video_path: lesson?.video_path ?? null,
   resource_name: lesson?.resource_name || '',
 });
 
@@ -71,7 +71,7 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onChange, onSave, onImme
   const handleSelectResource = () => {
     // 模拟选择资源
     const mockFile = {
-      resource_id: `res_mock_${Date.now()}`,
+      video_path: `res_mock_${Date.now()}`,
       resource_name: 'mock_video_selected.mp4'
     };
     const nextLesson = {
@@ -89,11 +89,11 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onChange, onSave, onImme
     const nextLesson = {
       ...lesson,
       ...form.getFieldsValue(),
-      resource_id: path,
+      video_path: path,
       resource_name: fileName
     };
     setResourceState({
-      resource_id: path,
+      video_path: path,
       resource_name: fileName,
     });
     onChange(nextLesson);
@@ -145,7 +145,7 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onChange, onSave, onImme
         <VideoChunkUpload
           onChange={handleChunkUploadSuccess}
           scenario="temp_video"
-          previewPath={resourceState?.resource_id}
+          previewPath={resourceState?.video_path}
           buttonText="上传教学视频"
           style={{ width: '100%', marginBottom: '16px' }}
         />

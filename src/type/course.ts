@@ -181,7 +181,7 @@ export interface CourseOutlineLessonDto {
   lesson_id: string;
   title: string;
   description?: string;
-  resource_id?: string | null;
+  video_path?: string | null;
   resource_name?: string;
   sort_order: number;
   duration: number;
@@ -262,7 +262,7 @@ export interface LessonQuickUpdateDto {
   chapter_id: string;
   title: string;
   description?: string;
-  resource_id?: string | null;
+  video_path?: string | null;
   duration: number;
   sort_order: number;
 }
