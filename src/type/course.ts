@@ -39,7 +39,7 @@ export interface CourseListItem {
   update_time?: string;
   chapter_count: number;
   total_lesson_count: number;
-  teacher_names: string[];
+  teacher_names: TeacherSimpleDto[];
   creator_name?: string;
 }
 
@@ -58,7 +58,7 @@ export interface CourseBasicAdminDto {
   status: CourseStatus;
   cover_img?: string;
   description?: string;
-  teacher_names?: string[];
+  teacher_names?: TeacherSimpleDto[];
   teacher_ids?: string[];
   teaching_group_id?: string;
   teaching_group?: string;
@@ -76,10 +76,12 @@ export interface SchoolTeacherByNameParams {
   pageSize?: number;
 }
 
-export interface SchoolTeacherSimpleDto {
+export interface TeacherSimpleDto {
   id: string;
   name: string;
 }
+
+export type SchoolTeacherSimpleDto = TeacherSimpleDto;
 
 export interface SchoolTeacherByNameResponseDto {
   list: SchoolTeacherSimpleDto[];
@@ -128,10 +130,7 @@ export interface CreateTeachingGroupAdminResponseDto {
   invite_code: string;
 }
 
-export interface TeachingGroupTeacherDto {
-  id: string;
-  name: string;
-}
+export type TeachingGroupTeacherDto = TeacherSimpleDto;
 
 export interface TeachingGroupItemDto {
   id: string;
@@ -141,9 +140,9 @@ export interface TeachingGroupItemDto {
   create_time?: string;
   createTime?: string;
   ttl?: number | null;
-  teachers?: Array<TeachingGroupTeacherDto | string>;
+  teachers?: TeacherSimpleDto[];
   teacher_ids?: string[];
-  teacher_names?: string[];
+  teacher_names?: TeacherSimpleDto[];
   invitation_create_time?: string | null;
   invitation_ttl?: number | null;
   expire_time?: string | null;

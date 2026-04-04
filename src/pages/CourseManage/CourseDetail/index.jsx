@@ -25,6 +25,23 @@ import './index.less';
 const { TabPane } = Tabs;
 const { Option } = Select;
 
+const formatTeacherNameText = (teachers) => {
+    if (!Array.isArray(teachers) || !teachers.length) {
+        return '-';
+    }
+
+    const names = teachers
+        .map((item) => {
+            if (typeof item === 'string') {
+                return item.trim();
+            }
+            return String(item?.name || item?.id || '').trim();
+        })
+        .filter((item) => !!item);
+
+    return names.length ? names.join('、') : '-';
+};
+
 const CourseDetail = () => {
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
@@ -150,9 +167,7 @@ const CourseDetail = () => {
                             <Descriptions.Item label="学校名称">{courseData?.school_name || '-'}</Descriptions.Item>
                             <Descriptions.Item label="学校ID">{courseData?.school_id}</Descriptions.Item>
                             <Descriptions.Item label="任课老师">
-                                {(Array.isArray(courseData?.teacher_names) && courseData.teacher_names.length)
-                                    ? courseData.teacher_names.join('、')
-                                    : '-'}
+                                {formatTeacherNameText(courseData?.teacher_names)}
                             </Descriptions.Item>
                             <Descriptions.Item label="创建时间">
                                 {courseData?.create_time ? moment.unix(Number(courseData.create_time)).format('YYYY-MM-DD HH:mm:ss') : '-'}

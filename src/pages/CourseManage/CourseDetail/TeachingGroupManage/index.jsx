@@ -47,70 +47,81 @@ const parseUnixTimestamp = (value) => {
     return Math.floor(parsedMs / 1000);
 };
 
-const getTeachersFromRecord = (record) => {
-    if (!Array.isArray(record?.teachers)) {
-        return [];
+const normalizeTeacherItem = (item) => {
+    if (typeof item === 'string') {
+        const name = item.trim();
+        if (!name) {
+            return null;
+        }
+        return {
+            id: '',
+            name,
+        };
     }
 
-    return record.teachers
-        .map((item) => {
-            if (typeof item === 'string') {
-                const name = item.trim();
-                if (!name) {
-                    return null;
-                }
-                return {
-                    id: '',
-                    name,
-                };
-            }
+    if (!item || typeof item !== 'object') {
+        return null;
+    }
 
-            const id = item?.id ?? item?.teacher_id ?? item?.user_id;
-            const name = item?.name ?? item?.teacher_name ?? item?.user_name;
-            if (!id && !name) {
-                return null;
-            }
-            return {
-                id: id ? String(id) : '',
-                name: name ? String(name) : '',
-            };
-        })
+    const id = item?.id ?? item?.teacher_id ?? item?.user_id;
+    const name = item?.name ?? item?.teacher_name ?? item?.user_name;
+    if (!id && !name) {
+        return null;
+    }
+
+    return {
+        id: id ? String(id) : '',
+        name: name ? String(name) : '',
+    };
+};
+
+const getTeachersFromRecord = (record) => {
+    const source = (Array.isArray(record?.teachers) && record.teachers.length)
+        ? record.teachers
+        : (Array.isArray(record?.teacher_names) ? record.teacher_names : []);
+
+    return source
+        .map((item) => normalizeTeacherItem(item))
         .filter(Boolean);
 };
 
 const getTeacherNameText = (record) => {
     const teachers = getTeachersFromRecord(record);
-    if (teachers.length) {
-        return teachers
-            .map((item) => item.name || item.id)
-            .filter((value) => !!value)
-            .join('、');
-    }
-    if (Array.isArray(record?.teacher_names) && record.teacher_names.length) {
-        return record.teacher_names.join('、');
+    if (!teachers.length) {
+        return '-';
     }
 
-    return '-';
+    const names = teachers
+        .map((item) => item.name || item.id)
+        .filter((value) => !!value);
+
+    return names.length ? names.join('、') : '-';
 };
 
 const getTeacherSelection = (record) => {
     const teachers = getTeachersFromRecord(record);
+    const fallbackTeacherIds = Array.isArray(record?.teacher_ids)
+        ? record.teacher_ids.map((id) => String(id)).filter((id) => !!id)
+        : [];
+
     if (teachers.length) {
+        const teacherIds = teachers.map((item) => item.id).filter((id) => !!id);
         return {
-            teacherIds: teachers.map((item) => item.id).filter((id) => !!id),
-            teacherNames: teachers.map((item) => item.name || item.id),
+            teacherIds: teacherIds.length ? teacherIds : fallbackTeacherIds,
+            teacherNames: teachers.map((item) => item.name || item.id).filter((name) => !!name),
         };
     }
 
-    const teacherIds = Array.isArray(record?.teacher_ids)
-        ? record.teacher_ids.map((id) => String(id)).filter((id) => !!id)
-        : [];
     const teacherNames = Array.isArray(record?.teacher_names)
         ? record.teacher_names
+            .map((item) => normalizeTeacherItem(item))
+            .filter(Boolean)
+            .map((item) => item.name || item.id)
+            .filter((name) => !!name)
         : [];
 
     return {
-        teacherIds,
+        teacherIds: fallbackTeacherIds,
         teacherNames,
     };
 };
@@ -586,23 +597,6 @@ const TeachingGroupManage = ({ courseId, schoolId }) => {
         }
     };
 
-    const handleCopyText = async (text, successMessage, emptyMessage) => {
-        if (!text) {
-            if (emptyMessage) {
-                message.warning(emptyMessage);
-            }
-            return;
-        }
-
-        try {
-            await navigator.clipboard.writeText(String(text));
-            message.success(successMessage);
-        } catch (error) {
-            console.error('Failed to copy text', error);
-            message.error('复制失败，请手动复制');
-        }
-    };
-    
     const handleCopy = (value) => {
       navigator.clipboard.writeText(value);
       message.success('已复制');

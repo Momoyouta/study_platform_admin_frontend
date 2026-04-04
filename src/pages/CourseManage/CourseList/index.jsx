@@ -24,6 +24,23 @@ const cleanPayload = (payload) => {
     return nextPayload;
 };
 
+const formatTeacherNameText = (teachers) => {
+    if (!Array.isArray(teachers) || !teachers.length) {
+        return '-';
+    }
+
+    const names = teachers
+        .map((item) => {
+            if (typeof item === 'string') {
+                return item.trim();
+            }
+            return String(item?.name || item?.id || '').trim();
+        })
+        .filter((item) => !!item);
+
+    return names.length ? names.join('、') : '-';
+};
+
 const CourseList = observer(() => {
     const navigate = useNavigate();
     const [form] = Form.useForm();
@@ -227,7 +244,7 @@ const CourseList = observer(() => {
             dataIndex: 'teacher_names',
             key: 'teacher_names',
             width: 220,
-            render: (names) => (Array.isArray(names) && names.length ? names.join('、') : '-'),
+            render: (teachers) => formatTeacherNameText(teachers),
         },
         {
             title: '创建人',
