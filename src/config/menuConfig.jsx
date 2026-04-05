@@ -3,6 +3,7 @@ import {
     UserOutlined,
     BookOutlined,
     FileTextOutlined,
+    FolderOpenOutlined,
     SettingOutlined,
     BankOutlined,
 } from '@ant-design/icons';
@@ -112,6 +113,13 @@ const menuConfig = [
         label: '内容管理',
         icon: <FileTextOutlined />,
         path: '/content-manage',
+    },
+    {
+        key: 'file-manage',
+        label: '文件管理',
+        icon: <FolderOpenOutlined />,
+        path: '/file-manage',
+        roles: ['root', 'admin', 'school_root', 'school_admin']
     },
     {
         key: 'system-settings',

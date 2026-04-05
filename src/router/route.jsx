@@ -34,6 +34,10 @@ const routes = [
                 component: lazy(() => import('../pages/ContentManage/index.jsx')),
             },
             {
+                path: 'file-manage',
+                component: lazy(() => import('../pages/FileManage/index.jsx')),
+            },
+            {
                 path: 'system-settings',
                 component: lazy(() => import('../pages/SystemSettings/index.jsx')),
             },

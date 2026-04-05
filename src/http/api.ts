@@ -17,7 +17,17 @@ import type {
     UpdateCourseDto,
     UpdateCourseCoverDto
 } from "../type/course";
-import type { InitChunkDto, MergeChunkDto } from "@/type/file";
+import type {
+    DeleteFileChunkResponseDto,
+    FileChunkAdminListResponseDto,
+    FileChunkAdminQueryParams,
+    InitChunkDto,
+    MergeChunkDto,
+    MoveFileChunkResponseDto,
+    MoveFileChunkToSchoolDto,
+    UpdateFileChunkFilenameDto,
+    UpdateFileChunkFilenameResponseDto
+} from "@/type/file";
 
 export const login = (account: string, pwd: string) => {
     return http.post('/auth/admin/login', {
@@ -129,6 +139,43 @@ export const getChunkProgress = (fileHash: string) => {
  */
 export const mergeChunks = (data: MergeChunkDto) => {
     return http.post('/file/chunk/merge', data);
+}
+
+export const queryFileChunkAdmin = (params: FileChunkAdminQueryParams) => {
+    return http.get('/admin/fileChunk/query', { params }) as Promise<{
+        code: number;
+        msg: string;
+        data: FileChunkAdminListResponseDto;
+    }>;
+}
+
+export const updateFileChunkFilename = (data: UpdateFileChunkFilenameDto) => {
+    return http.patch('/admin/fileChunk/updateFilename', data) as Promise<{
+        code: number;
+        msg: string;
+        data: UpdateFileChunkFilenameResponseDto;
+    }>;
+}
+
+export const deleteFileChunkAdmin = (id: string, force = false) => {
+    return http.delete('/admin/fileChunk/delete', {
+        params: {
+            id,
+            force,
+        },
+    }) as Promise<{
+        code: number;
+        msg: string;
+        data: DeleteFileChunkResponseDto;
+    }>;
+}
+
+export const moveFileChunkToSchool = (data: MoveFileChunkToSchoolDto) => {
+    return http.post('/admin/fileChunk/moveToSchool', data) as Promise<{
+        code: number;
+        msg: string;
+        data: MoveFileChunkResponseDto;
+    }>;
 }
 
 // ================= 用户管理 (User) =================
