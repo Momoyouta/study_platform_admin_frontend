@@ -9,15 +9,17 @@ import {
 } from '@ant-design/icons';
 import type { UploadProps } from 'antd';
 import { initChunkUpload, uploadChunk, mergeChunks } from '@/http/api';
+import { ChunkUploadType } from '@/type/file';
+import { useStore } from '@/store';
 import HashWorker from './hash.worker?worker';
 import './index.less';
 
 const { Text } = Typography;
 
 export interface BusinessConfig {
-    schoolId?: number;
-    courseId?: number;
-    homeworkId?: number;
+    schoolId?: string | number;
+    courseId?: string | number;
+    homeworkId?: string | number;
 }
 
 interface VideoChunkUploadProps {
@@ -59,6 +61,30 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
     autoMerge = true,
     style = {} // 新增：默认值
 }, ref) => {
+    const { CourseStore } = useStore();
+
+    const normalizeId = (id?: string | number) => {
+        if (id === undefined || id === null || id === '') {
+            return undefined;
+        }
+
+        const normalized = String(id).trim();
+        return normalized || undefined;
+    };
+
+    const resolvedBusinessConfig: BusinessConfig = {
+        ...businessConfig,
+        schoolId: businessConfig.schoolId ?? (CourseStore.schoolId || undefined),
+        // 不自动回退 courseId，避免 temp_video 场景将字符串 courseId 注入分片接口触发后端 number 校验错误
+        courseId: businessConfig.courseId,
+    };
+
+    const normalizedPayloadConfig = {
+        schoolId: normalizeId(resolvedBusinessConfig.schoolId),
+        courseId: normalizeId(resolvedBusinessConfig.courseId),
+        homeworkId: normalizeId(resolvedBusinessConfig.homeworkId),
+    };
+
     const [status, setStatus] = useState<UploadStatus>(previewPath ? UploadStatus.SUCCESS : UploadStatus.IDLE);
     const [progress, setProgress] = useState(0);
     const [statusText, setStatusText] = useState(previewPath ? '视频已挂载' : '');
@@ -102,7 +128,7 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
             const mergeRes = await mergeChunks({
                 ...uploadInfo,
                 scenario,
-                ...businessConfig
+                ...normalizedPayloadConfig
             });
 
             if (mergeRes.data?.filePath) {
@@ -145,7 +171,9 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
                 fileHash,
                 fileName: file.name,
                 fileSize: file.size,
-                totalChunks
+                totalChunks,
+                type: ChunkUploadType.VIDEO,
+                schoolId: normalizedPayloadConfig.schoolId
             });
 
             // 检查是否秒传成功
@@ -174,9 +202,13 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
                 formData.append('fileHash', fileHash);
                 formData.append('scenario', scenario);
 
-                if (businessConfig.schoolId) formData.append('schoolId', String(businessConfig.schoolId));
-                if (businessConfig.courseId) formData.append('courseId', String(businessConfig.courseId));
-                if (businessConfig.homeworkId) formData.append('homeworkId', String(businessConfig.homeworkId));
+                const explicitSchoolId = normalizeId(businessConfig.schoolId);
+                const explicitCourseId = normalizeId(businessConfig.courseId);
+                const explicitHomeworkId = normalizeId(businessConfig.homeworkId);
+
+                if (explicitSchoolId !== undefined) formData.append('schoolId', String(explicitSchoolId));
+                if (explicitCourseId !== undefined) formData.append('courseId', String(explicitCourseId));
+                if (explicitHomeworkId !== undefined) formData.append('homeworkId', String(explicitHomeworkId));
 
                 await uploadChunk(formData);
 
@@ -200,7 +232,7 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
                 const mergeRes = await mergeChunks({
                     ...currentUploadInfo,
                     scenario,
-                    ...businessConfig
+                    ...normalizedPayloadConfig
                 });
 
                 if (mergeRes.data?.filePath) {

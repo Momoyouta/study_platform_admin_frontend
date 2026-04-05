@@ -20,6 +20,7 @@ import moment from 'moment';
 import TaskEditor from './TaskEditor';
 import CourseOutline from './ChapterEditor';
 import TeachingGroupManage from './TeachingGroupManage';
+import { useStore } from '@/store';
 import './index.less';
 
 const { TabPane } = Tabs;
@@ -43,6 +44,7 @@ const formatTeacherNameText = (teachers) => {
 };
 
 const CourseDetail = () => {
+    const { CourseStore } = useStore();
     const [searchParams] = useSearchParams();
     const navigate = useNavigate();
     const courseId = searchParams.get('courseId');
@@ -55,15 +57,22 @@ const CourseDetail = () => {
 
     const fetchDetail = useCallback(async () => {
         if (!courseId) {
+            CourseStore.clearCurrentCourseInfo();
             setError('课程ID缺失');
             return;
         }
 
+        CourseStore.setCurrentCourseInfo({ courseId: String(courseId) });
         setLoading(true);
         try {
             const res = await getCourseBasicAdmin(courseId);
             if (res.code === 200 || res.data) {
                 const data = res.data;
+                CourseStore.replaceCurrentCourseInfo({
+                    courseId: String(data?.id ?? courseId ?? ''),
+                    schoolId: String(data?.school_id ?? ''),
+                    creatorId: String(data?.creator_id ?? ''),
+                });
                 setCourseData(data);
                 form.setFieldsValue({
                     name: data.name,
@@ -79,11 +88,17 @@ const CourseDetail = () => {
         } finally {
             setLoading(false);
         }
-    }, [courseId, form]);
+    }, [courseId, form, CourseStore]);
 
     useEffect(() => {
         fetchDetail();
     }, [fetchDetail]);
+
+    useEffect(() => {
+        return () => {
+            CourseStore.clearCurrentCourseInfo();
+        };
+    }, [CourseStore]);
 
     const handleSave = async () => {
         try {
