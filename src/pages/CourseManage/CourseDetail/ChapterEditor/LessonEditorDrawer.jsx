@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Drawer, Form, Input, Modal, Space, Tooltip, message } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 import VideoChunkUpload from '@/components/VideoChunkUpload';
+import { UploadScenarioMap } from '@/type/map.js';
 
 const { TextArea } = Input;
 
@@ -144,7 +145,7 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onChange, onSave, onImme
         <p style={{ fontWeight: '500', marginBottom: '8px', fontSize: '14px', color: 'rgba(0, 0, 0, 0.88)' }}>教学视频</p>
         <VideoChunkUpload
           onChange={handleChunkUploadSuccess}
-          scenario="temp_video"
+          scenario={UploadScenarioMap.TEMP_VIDEO}
           previewPath={resourceState?.video_path}
           buttonText="上传教学视频"
           style={{ width: '100%', marginBottom: '16px' }}

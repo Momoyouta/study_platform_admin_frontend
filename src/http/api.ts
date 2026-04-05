@@ -1,11 +1,17 @@
 import http from "./http.js";
 import type { CreateInviteDto } from "@/type/invite";
 import type {
+    BindCourseMaterialDto,
+    BindCourseMaterialResponseDto,
     BindTeachingGroupTeachersDto,
+    CourseMaterialListParams,
+    CourseMaterialListResponseDto,
     CourseListParams,
     CreateCourseInviteDto,
     CreateCourseDto,
     CreateTeachingGroupAdminDto,
+    DeleteCourseMaterialDto,
+    DeleteCourseMaterialResponseDto,
     CourseOutlineSource,
     ListTeachingGroupAdminParams,
     PublishCourseOutlineDto,
@@ -13,6 +19,8 @@ import type {
     QuickUpdateLessonDto,
     SaveCourseDraftDto,
     SchoolTeacherByNameParams,
+    UpdateCourseMaterialDto,
+    UpdateCourseMaterialResponseDto,
     UpdateTeachingGroupAdminDto,
     UpdateCourseDto,
     UpdateCourseCoverDto
@@ -319,6 +327,39 @@ export const updateChapterTitleQuickAdmin = (data: QuickUpdateChapterTitleDto) =
 
 export const updateLessonQuickAdmin = (data: QuickUpdateLessonDto) => {
     return http.put('/course/updateLessonQuickAdmin', data);
+}
+
+// ================= 课程资料管理 (Course Material) =================
+export const bindCourseMaterial = (data: BindCourseMaterialDto) => {
+    return http.post('/course/material/bind', data) as Promise<{
+        code: number;
+        msg: string;
+        data: BindCourseMaterialResponseDto;
+    }>;
+}
+
+export const listCourseMaterial = (params: CourseMaterialListParams) => {
+    return http.get('/course/material/list', { params }) as Promise<{
+        code: number;
+        msg: string;
+        data: CourseMaterialListResponseDto;
+    }>;
+}
+
+export const updateCourseMaterial = (data: UpdateCourseMaterialDto) => {
+    return http.post('/course/material/update', data) as Promise<{
+        code: number;
+        msg: string;
+        data: UpdateCourseMaterialResponseDto;
+    }>;
+}
+
+export const deleteCourseMaterial = (data: DeleteCourseMaterialDto) => {
+    return http.post('/course/material/delete', data) as Promise<{
+        code: number;
+        msg: string;
+        data: DeleteCourseMaterialResponseDto;
+    }>;
 }
 
 // ================= 额外补充 =================

@@ -20,6 +20,7 @@ import moment from 'moment';
 import TaskEditor from './TaskEditor';
 import CourseOutline from './ChapterEditor';
 import TeachingGroupManage from './TeachingGroupManage';
+import MaterialManage from './MaterialManage';
 import { useStore } from '@/store';
 import './index.less';
 
@@ -267,6 +268,16 @@ const CourseDetail = () => {
                         <TaskEditor courseId={courseId} />
                     </div>
                 </TabPane>
+
+                <TabPane tab="资料管理" key="materials">
+                    <div className="tab-content material-manage-tab">
+                        <MaterialManage
+                            courseId={courseId}
+                            schoolId={courseData?.school_id}
+                        />
+                    </div>
+                </TabPane>
+
                 <TabPane tab="作业管理" key="homework">
                     <div className="placeholder-content">
                         <Alert message="作业管理功能暂未开放" type="info" showIcon />

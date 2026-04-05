@@ -27,3 +27,8 @@ export const SchoolApplicationStatusMap = {
     1: { color: 'green', text: '已通过' },
     2: { color: 'red', text: '已驳回' },
 };
+
+export const UploadScenarioMap = {
+    TEMP_VIDEO: 'temp_video',
+    TEMP_DOCUMENT: 'temp_document',
+};

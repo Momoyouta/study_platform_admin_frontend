@@ -177,6 +177,57 @@ export interface DeleteTeachingGroupAdminResponseDto {
   deleted: boolean;
 }
 
+export interface BindCourseMaterialDto {
+  course_id: string;
+  file_id: string;
+}
+
+export interface BindCourseMaterialResponseDto {
+  id: string;
+  bound: boolean;
+}
+
+export interface CourseMaterialListParams {
+  course_id: string;
+  file_name?: string;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface CourseMaterialItemDto {
+  id: string;
+  file_id: string;
+  file_name: string;
+  uploader_id: string;
+  uploader_name?: string;
+  create_time?: string;
+}
+
+export interface CourseMaterialListResponseDto {
+  list: CourseMaterialItemDto[];
+  total: number;
+}
+
+export interface UpdateCourseMaterialDto {
+  material_id: string;
+  file_name: string;
+}
+
+export interface UpdateCourseMaterialResponseDto {
+  id: string;
+  updated: boolean;
+}
+
+export interface DeleteCourseMaterialDto {
+  material_id: string;
+  mode: 1 | 2;
+}
+
+export interface DeleteCourseMaterialResponseDto {
+  id: string;
+  deleted: boolean;
+}
+
 export interface CourseOutlineLessonDto {
   lesson_id: string;
   title: string;

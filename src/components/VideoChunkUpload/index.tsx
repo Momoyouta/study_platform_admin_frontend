@@ -1,4 +1,5 @@
 import { useEffect, useState, useImperativeHandle, forwardRef } from 'react';
+import type { ReactNode } from 'react';
 import { Upload, Progress, message, Button, Space, Typography } from 'antd';
 import {
     CloudUploadOutlined,
@@ -7,7 +8,7 @@ import {
     ExclamationCircleFilled,
     FolderOpenOutlined
 } from '@ant-design/icons';
-import type { UploadProps } from 'antd';
+import type { ButtonProps, UploadProps } from 'antd';
 import { initChunkUpload, uploadChunk, mergeChunks } from '@/http/api';
 import { ChunkUploadType } from '@/type/file';
 import { useStore } from '@/store';
@@ -22,8 +23,20 @@ export interface BusinessConfig {
     homeworkId?: string | number;
 }
 
+export interface ChunkUploadResult {
+    filePath?: string;
+    fileId?: string;
+    fileHash: string;
+    fileName: string;
+    uploadId?: string;
+    type: ChunkUploadType;
+    rawInitData?: Record<string, unknown>;
+    rawMergeData?: Record<string, unknown>;
+}
+
 interface VideoChunkUploadProps {
-    onChange: (path: string) => void;
+    onChange?: (path: string) => void;
+    onUploaded?: (result: ChunkUploadResult) => void | Promise<void>;
     scenario: string;
     businessConfig?: BusinessConfig;
     previewPath?: string;
@@ -31,7 +44,17 @@ interface VideoChunkUploadProps {
     maxSizeMB?: number;
     disabled?: boolean;
     autoMerge?: boolean;
-    style?: React.CSSProperties; // 新增：样式支持
+    style?: React.CSSProperties;
+    uploadType?: ChunkUploadType;
+    accept?: string;
+    resourceLabel?: string;
+    mode?: 'card' | 'button';
+    buttonClassName?: string;
+    buttonType?: ButtonProps['type'];
+    buttonSize?: ButtonProps['size'];
+    buttonIcon?: ReactNode;
+    showSuccessMessage?: boolean;
+    successMessage?: string;
 }
 
 export interface VideoChunkUploadHandle {
@@ -42,26 +65,90 @@ enum UploadStatus {
     IDLE = 'IDLE',
     HASHING = 'HASHING',
     UPLOADING = 'UPLOADING',
-    WAITING_MERGE = 'WAITING_MERGE', // 新增：等待合并状态
+    WAITING_MERGE = 'WAITING_MERGE',
     MERGING = 'MERGING',
     SUCCESS = 'SUCCESS',
     ERROR = 'ERROR'
 }
 
-const CHUNK_SIZE = 5 * 1024 * 1024; // 5MB 分片
+const CHUNK_SIZE = 5 * 1024 * 1024;
+
+const toRecord = (value: unknown): Record<string, unknown> => {
+    if (value && typeof value === 'object') {
+        return value as Record<string, unknown>;
+    }
+    return {};
+};
+
+const toOptionalString = (value: unknown): string | undefined => {
+    if (value === undefined || value === null || value === '') {
+        return undefined;
+    }
+    return String(value);
+};
+
+const resolveFilePathFromPayload = (payload?: Record<string, unknown>) => {
+    if (!payload) {
+        return undefined;
+    }
+
+    const candidates = [payload.filePath, payload.file_path, payload.path, payload.url];
+    return candidates
+        .map((item) => toOptionalString(item))
+        .find((item) => !!item);
+};
+
+const resolveFileIdFromPayload = (payload?: Record<string, unknown>) => {
+    if (!payload) {
+        return undefined;
+    }
+
+    const candidates = [payload.file_id, payload.fileId, payload.id, payload.fileChunkId];
+    return candidates
+        .map((item) => toOptionalString(item))
+        .find((item) => !!item);
+};
+
+const getErrorMessage = (error: unknown, fallback: string) => {
+    if (error instanceof Error && error.message) {
+        return error.message;
+    }
+
+    if (typeof error === 'string' && error) {
+        return error;
+    }
+
+    return fallback;
+};
 
 const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProps>(({
     onChange,
+    onUploaded,
     scenario,
     businessConfig = {},
     previewPath,
-    buttonText = '选择并上传视频',
     maxSizeMB = 2048,
     disabled = false,
     autoMerge = true,
-    style = {} // 新增：默认值
+    style = {},
+    uploadType = ChunkUploadType.VIDEO,
+    accept,
+    resourceLabel,
+    mode = 'card',
+    buttonClassName,
+    buttonType = 'primary',
+    buttonSize = 'middle',
+    buttonIcon = <CloudUploadOutlined />,
+    showSuccessMessage = true,
+    successMessage,
+    buttonText,
 }, ref) => {
     const { CourseStore } = useStore();
+    const isVideoType = uploadType === ChunkUploadType.VIDEO;
+    const resolvedResourceLabel = resourceLabel || (isVideoType ? '视频' : '文件');
+    const resolvedButtonText = buttonText || (isVideoType ? '选择并上传视频' : '选择并上传文件');
+    const resolvedAccept = accept === undefined ? (isVideoType ? 'video/*' : undefined) : accept;
+    const resolvedSuccessMessage = successMessage || `${resolvedResourceLabel}上传成功`;
 
     const normalizeId = (id?: string | number) => {
         if (id === undefined || id === null || id === '') {
@@ -87,21 +174,21 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
 
     const [status, setStatus] = useState<UploadStatus>(previewPath ? UploadStatus.SUCCESS : UploadStatus.IDLE);
     const [progress, setProgress] = useState(0);
-    const [statusText, setStatusText] = useState(previewPath ? '视频已挂载' : '');
+    const [statusText, setStatusText] = useState(previewPath ? `${resolvedResourceLabel}已挂载` : '');
     const [currentFileName, setCurrentFileName] = useState<string>(previewPath ? previewPath.split('/').pop() || '' : '');
 
-    // 存储合并所需的信息
     const [uploadInfo, setUploadInfo] = useState<{
         uploadId: string;
         fileHash: string;
         fileName: string;
+        initData?: Record<string, unknown>;
     } | null>(null);
 
     useEffect(() => {
         if (previewPath) {
             const fileName = previewPath.split('/').pop() || '';
             setStatus(UploadStatus.SUCCESS);
-            setStatusText('视频已挂载');
+            setStatusText(`${resolvedResourceLabel}已挂载`);
             setProgress(100);
             setCurrentFileName(fileName);
             return;
@@ -112,9 +199,49 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
         setProgress(0);
         setCurrentFileName('');
         setUploadInfo(null);
-    }, [previewPath]);
+    }, [previewPath, resolvedResourceLabel]);
 
-    // 暴露给外部的合并方法
+    const buildUploadResult = (
+        fileHash: string,
+        fileName: string,
+        uploadId: string | undefined,
+        initData?: Record<string, unknown>,
+        mergeData?: Record<string, unknown>
+    ): ChunkUploadResult => {
+        const filePath = resolveFilePathFromPayload(mergeData) || resolveFilePathFromPayload(initData);
+        const fileId = resolveFileIdFromPayload(mergeData) || resolveFileIdFromPayload(initData);
+
+        return {
+            filePath,
+            fileId,
+            fileHash,
+            fileName,
+            uploadId,
+            type: uploadType,
+            rawInitData: initData,
+            rawMergeData: mergeData,
+        };
+    };
+
+    const onUploadComplete = async (result: ChunkUploadResult) => {
+        if (onUploaded) {
+            await onUploaded(result);
+        }
+
+        setStatus(UploadStatus.SUCCESS);
+        setStatusText('上传成功');
+        setProgress(100);
+        setCurrentFileName(result.fileName);
+
+        if (result.filePath && onChange) {
+            onChange(result.filePath);
+        }
+
+        if (showSuccessMessage) {
+            message.success(resolvedSuccessMessage);
+        }
+    };
+
     const manualMerge = async () => {
         if (!uploadInfo) {
             message.warning('尚未完成分片上传，无法合并');
@@ -126,21 +253,33 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
 
         try {
             const mergeRes = await mergeChunks({
-                ...uploadInfo,
+                uploadId: uploadInfo.uploadId,
+                fileHash: uploadInfo.fileHash,
+                fileName: uploadInfo.fileName,
                 scenario,
                 ...normalizedPayloadConfig
             });
 
-            if (mergeRes.data?.filePath) {
-                onUploadComplete(mergeRes.data.filePath);
-                return mergeRes.data.filePath;
-            } else {
-                throw new Error('合并失败，未返回路径');
+            const mergeData = toRecord(mergeRes?.data);
+            const result = buildUploadResult(
+                uploadInfo.fileHash,
+                uploadInfo.fileName,
+                uploadInfo.uploadId,
+                uploadInfo.initData,
+                mergeData
+            );
+
+            if (isVideoType && !result.filePath) {
+                throw new Error('合并失败，未返回可用视频路径');
             }
-        } catch (error: any) {
+
+            await onUploadComplete(result);
+            return result.filePath;
+        } catch (error) {
+            const errorText = getErrorMessage(error, '合并失败');
             setStatus(UploadStatus.ERROR);
-            setStatusText(error.message || '合并出错');
-            message.error(error.message || '合并失败');
+            setStatusText(errorText);
+            message.error(errorText);
             throw error;
         }
     };
@@ -150,42 +289,47 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
     }));
 
     const handleUpload = async (file: File) => {
-        // 1. 校验大小
-        if (file.size > maxSizeMB * 1024 * 1024) {
-            message.error(`文件不能超过 ${maxSizeMB}MB`);
-            return Upload.LIST_IGNORE;
-        }
-
         setStatus(UploadStatus.HASHING);
         setStatusText('正在计算指纹...');
         setProgress(0);
         setCurrentFileName(file.name);
 
         try {
-            // 2. 计算 Hash (Web Worker)
             const fileHash = await calculateHash(file);
-
-            // 3. 初始化上传
             const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
             const initRes = await initChunkUpload({
                 fileHash,
                 fileName: file.name,
                 fileSize: file.size,
                 totalChunks,
-                type: ChunkUploadType.VIDEO,
+                type: uploadType,
                 schoolId: normalizedPayloadConfig.schoolId
             });
 
-            // 检查是否秒传成功
-            if (initRes.data?.filePath) {
-                onUploadComplete(initRes.data.filePath);
+            const initData = toRecord(initRes?.data);
+            const uploadId = toOptionalString(initData.uploadId);
+
+            if (!uploadId) {
+                const result = buildUploadResult(fileHash, file.name, undefined, initData);
+                if (isVideoType && !result.filePath) {
+                    throw new Error('上传完成但未返回可用视频路径');
+                }
+                await onUploadComplete(result);
                 return;
             }
 
-            const { uploadId, uploadedChunks = [] } = initRes.data;
-            const uploadedSet = new Set<number>(uploadedChunks);
+            const uploadedChunks = Array.isArray(initData.uploadedChunks) ? initData.uploadedChunks : [];
+            const uploadedSet = new Set<number>(
+                uploadedChunks
+                    .map((item) => Number(item))
+                    .filter((item) => Number.isInteger(item) && item >= 0)
+            );
 
-            // 4. 开始分片上传
+            let uploadedCount = Math.min(uploadedSet.size, totalChunks);
+            if (uploadedCount > 0) {
+                setProgress(Math.floor((uploadedCount / totalChunks) * 100));
+            }
+
             setStatus(UploadStatus.UPLOADING);
             setStatusText('正在上传分片...');
 
@@ -202,54 +346,61 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
                 formData.append('fileHash', fileHash);
                 formData.append('scenario', scenario);
 
-                const explicitSchoolId = normalizeId(businessConfig.schoolId);
-                const explicitCourseId = normalizeId(businessConfig.courseId);
-                const explicitHomeworkId = normalizeId(businessConfig.homeworkId);
-
-                if (explicitSchoolId !== undefined) formData.append('schoolId', String(explicitSchoolId));
-                if (explicitCourseId !== undefined) formData.append('courseId', String(explicitCourseId));
-                if (explicitHomeworkId !== undefined) formData.append('homeworkId', String(explicitHomeworkId));
+                if (normalizedPayloadConfig.schoolId !== undefined) formData.append('schoolId', String(normalizedPayloadConfig.schoolId));
+                if (normalizedPayloadConfig.courseId !== undefined) formData.append('courseId', String(normalizedPayloadConfig.courseId));
+                if (normalizedPayloadConfig.homeworkId !== undefined) formData.append('homeworkId', String(normalizedPayloadConfig.homeworkId));
 
                 await uploadChunk(formData);
 
-                // 更新进度
-                const uploadedCount = i + 1;
+                uploadedCount += 1;
                 setProgress(Math.floor((uploadedCount / totalChunks) * 100));
             }
 
-            // 保存合并信息
             const currentUploadInfo = {
                 uploadId,
                 fileHash,
-                fileName: file.name
+                fileName: file.name,
+                initData,
             };
             setUploadInfo(currentUploadInfo);
 
-            // 5. 判断是否自动合并
             if (autoMerge) {
                 setStatus(UploadStatus.MERGING);
                 setStatusText('分片上传完成，正在合并...');
+
                 const mergeRes = await mergeChunks({
-                    ...currentUploadInfo,
+                    uploadId: currentUploadInfo.uploadId,
+                    fileHash: currentUploadInfo.fileHash,
+                    fileName: currentUploadInfo.fileName,
                     scenario,
                     ...normalizedPayloadConfig
                 });
 
-                if (mergeRes.data?.filePath) {
-                    onUploadComplete(mergeRes.data.filePath);
-                } else {
-                    throw new Error('合并失败，未返回路径');
+                const mergeData = toRecord(mergeRes?.data);
+                const result = buildUploadResult(
+                    fileHash,
+                    file.name,
+                    uploadId,
+                    initData,
+                    mergeData
+                );
+
+                if (isVideoType && !result.filePath) {
+                    throw new Error('合并失败，未返回可用视频路径');
                 }
+
+                await onUploadComplete(result);
             } else {
                 setStatus(UploadStatus.WAITING_MERGE);
                 setStatusText('分片上传已完成，等待合并指令');
             }
 
-        } catch (error: any) {
+        } catch (error) {
+            const errorText = getErrorMessage(error, '上传失败');
             console.error('Upload Error:', error);
             setStatus(UploadStatus.ERROR);
-            setStatusText(error.message || '上传过程中出错');
-            message.error(error.message || '上传失败');
+            setStatusText(errorText);
+            message.error(errorText);
         }
     };
 
@@ -265,32 +416,63 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
                     resolve(hash);
                     worker.terminate();
                 } else if (type === 'error') {
-                    reject(new Error(error));
+                    reject(new Error(error || '文件哈希计算失败'));
                     worker.terminate();
                 }
             };
         });
     };
 
-    const onUploadComplete = (path: string) => {
-        setStatus(UploadStatus.SUCCESS);
-        setStatusText('上传成功');
-        setProgress(100);
-        onChange(path);
-        message.success('视频上传成功');
-    };
-
     const uploadProps: UploadProps = {
         beforeUpload: (file) => {
-            handleUpload(file);
+            if (file.size > maxSizeMB * 1024 * 1024) {
+                message.error(`文件不能超过 ${maxSizeMB}MB`);
+                return Upload.LIST_IGNORE;
+            }
+
+            void handleUpload(file as unknown as File);
             return false;
         },
         showUploadList: false,
-        accept: 'video/*',
+        accept: resolvedAccept,
         disabled: disabled || (status !== UploadStatus.IDLE && status !== UploadStatus.SUCCESS && status !== UploadStatus.ERROR)
     };
 
+    const renderButtonMode = () => {
+        const loading = status === UploadStatus.HASHING || status === UploadStatus.UPLOADING || status === UploadStatus.MERGING;
+        const shouldShowProgress = status === UploadStatus.HASHING || status === UploadStatus.UPLOADING || status === UploadStatus.MERGING;
+        const shouldShowHint = shouldShowProgress || status === UploadStatus.WAITING_MERGE || status === UploadStatus.ERROR;
+
+        return (
+            <div className="upload-button-mode">
+                <Upload {...uploadProps}>
+                    <Button
+                        type={buttonType}
+                        size={buttonSize}
+                        icon={buttonIcon}
+                        className={buttonClassName}
+                        loading={loading}
+                        disabled={uploadProps.disabled}
+                    >
+                        {resolvedButtonText}
+                    </Button>
+                </Upload>
+
+                {shouldShowHint ? (
+                    <div className="button-mode-hint">
+                        <Text type={status === UploadStatus.ERROR ? 'danger' : 'secondary'}>{statusText || currentFileName}</Text>
+                        {shouldShowProgress ? <Progress percent={progress} size="small" /> : null}
+                    </div>
+                ) : null}
+            </div>
+        );
+    };
+
     const renderContent = () => {
+        if (mode === 'button') {
+            return renderButtonMode();
+        }
+
         switch (status) {
             case UploadStatus.HASHING:
             case UploadStatus.UPLOADING:
@@ -333,7 +515,7 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
                             <div className="card-inner">
                                 <CheckCircleFilled className="status-icon green" />
                                 <div>
-                                    <Text strong>视频挂载成功</Text>
+                                    <Text strong>{resolvedResourceLabel}挂载成功</Text>
                                     <br />
                                     <Text type="secondary" ellipsis title={currentFileName}>{currentFileName}</Text>
                                 </div>
@@ -364,7 +546,7 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
                         <div className="resource-card empty">
                             <div className="card-inner">
                                 <FolderOpenOutlined className="status-icon-large" />
-                                <p className="upload-desc">{buttonText}</p>
+                                <p className="upload-desc">{resolvedButtonText}</p>
                                 <Text className="upload-hint">支持分片断点续传，最大可上传 {maxSizeMB / 1024}GB</Text>
                             </div>
                         </div>
@@ -374,7 +556,7 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
     };
 
     return (
-        <div className="video-chunk-upload-container" style={style}>
+        <div className={`video-chunk-upload-container upload-mode-${mode}`} style={style}>
             {renderContent()}
         </div>
     );

@@ -1,0 +1,222 @@
+.course-material-manage {
+    .material-title {
+        margin: 0 0 20px;
+        font-size: 44px;
+        line-height: 1.15;
+        font-weight: 700;
+        color: #101828;
+        letter-spacing: 0.5px;
+    }
+
+    .material-panel {
+        border: 1px solid #eef0f3;
+        border-radius: 12px;
+        background: #fff;
+        padding: 20px;
+    }
+
+    .material-toolbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 18px;
+    }
+
+    .material-search-input {
+        width: 480px;
+        max-width: 100%;
+        height: 44px;
+        border-radius: 10px;
+        border-color: #eceef2;
+        background: #f6f7f9;
+
+        .ant-input {
+            background: transparent;
+            font-size: 16px;
+        }
+
+        .ant-input-prefix {
+            color: #9ca3af;
+            margin-right: 8px;
+        }
+
+        .material-search-icon {
+            color: #9ca3af;
+            cursor: pointer;
+            transition: color 0.2s ease;
+
+            &:hover {
+                color: #2f6bff;
+            }
+        }
+    }
+
+    .material-upload-btn.ant-btn {
+        min-width: 132px;
+        height: 44px;
+        border-radius: 10px;
+        font-size: 16px;
+        font-weight: 500;
+        background: #2f6bff;
+        border-color: #2f6bff;
+    }
+
+    .material-table-wrapper {
+        border: 1px solid #eef0f3;
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .material-table {
+        .ant-table-thead > tr > th {
+            background: #fff;
+            color: #667085;
+            font-size: 16px;
+            font-weight: 500;
+            border-bottom: 1px solid #eef0f3;
+        }
+
+        .ant-table-tbody > tr > td {
+            font-size: 16px;
+            color: #1f2937;
+            border-bottom: 1px solid #f2f4f7;
+            height: 72px;
+        }
+
+        .ant-table-tbody > tr:last-child > td {
+            border-bottom: none;
+        }
+    }
+
+    .file-name-cell {
+        display: inline-block;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        color: #111827;
+    }
+
+    .material-type-cell {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        color: #667085;
+    }
+
+    .material-type-icon {
+        font-size: 20px;
+
+        &.pdf {
+            color: #ef4444;
+        }
+
+        &.word {
+            color: #2563eb;
+        }
+
+        &.ppt {
+            color: #d97706;
+        }
+
+        &.text {
+            color: #6b7280;
+        }
+
+        &.image {
+            color: #16a34a;
+        }
+
+        &.video {
+            color: #7c3aed;
+        }
+
+        &.default {
+            color: #6b7280;
+        }
+    }
+
+    .material-size-cell,
+    .material-date-cell {
+        color: #1f2937;
+    }
+
+    .material-action-group {
+        .material-action-btn {
+            width: 30px;
+            height: 30px;
+            color: #1f2937;
+            border-radius: 8px;
+
+            &:hover {
+                background: #f2f4f7;
+            }
+        }
+
+        .material-action-btn.delete {
+            color: #ef4444;
+        }
+    }
+
+    .material-footer {
+        margin-top: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+    }
+
+    .material-footer-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+    }
+
+    .batch-delete-btn.ant-btn {
+        border-color: #e5e7eb;
+        background: #f5f6f8;
+        color: #9ca3af;
+
+        &:not(:disabled) {
+            background: #fff1f2;
+            border-color: #fecdd3;
+            color: #e11d48;
+        }
+    }
+
+    .selected-count {
+        color: #98a2b3;
+        font-size: 16px;
+    }
+}
+
+@media (max-width: 992px) {
+    .course-material-manage {
+        .material-title {
+            font-size: 32px;
+        }
+
+        .material-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .material-search-input {
+            width: 100%;
+        }
+
+        .material-upload-btn.ant-btn {
+            width: 100%;
+        }
+
+        .material-footer {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .selected-count {
+            font-size: 14px;
+        }
+    }
+}
