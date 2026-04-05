@@ -322,21 +322,6 @@ const MaterialManage = ({ courseId, schoolId }) => {
             || resolveFileId(uploadResult)
             || '';
 
-        if (!fileId && uploadResult?.fileHash) {
-            const queryRes = await queryFileChunkAdmin({
-                fileHash: uploadResult.fileHash,
-                page: 1,
-                pageSize: 1,
-                sortBy: 'updateTime',
-                sortOrder: 'DESC',
-                schoolId: normalizedSchoolId,
-            });
-
-            if (isSuccessResponse(queryRes)) {
-                fileId = String(queryRes?.data?.items?.[0]?.id || '');
-            }
-        }
-
         if (!fileId) {
             throw new Error('上传成功但未获取到文件ID，请稍后重试');
         }
