@@ -6,7 +6,8 @@ import './index.css'
 import { post } from './http/http.js'
 import './theme/variables.less'
 import { jwtAuth } from './http/api.js'
-import { message } from 'antd'
+// 移除 message 提示，统一由拦截器处理
+console.error('登录已过期，请重新登录');
 const init = async () => {
     const token = localStorage.getItem('access_token');
     const isLoginPage = window.location.pathname === '/login';
@@ -28,7 +29,7 @@ const init = async () => {
             }
         } catch (error) {
             // 校验失败：清除 token
-            message.error('登录已过期，请重新登录');
+            console.error('登录已过期，请重新登录');
             localStorage.removeItem('access_token');
             // 如果不在登录页则跳转到登录页
             if (!isLoginPage) {

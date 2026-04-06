@@ -279,7 +279,7 @@ const FileChunkUpload = forwardRef<FileChunkUploadHandle, FileChunkUploadProps>(
             const errorText = getErrorMessage(error, '合并失败');
             setStatus(UploadStatus.ERROR);
             setStatusText(errorText);
-            message.error(errorText);
+            console.error(errorText);
             throw error;
         }
     };
@@ -397,10 +397,9 @@ const FileChunkUpload = forwardRef<FileChunkUploadHandle, FileChunkUploadProps>(
 
         } catch (error) {
             const errorText = getErrorMessage(error, '上传失败');
-            console.error('Upload Error:', error);
+            console.error(errorText);
             setStatus(UploadStatus.ERROR);
             setStatusText(errorText);
-            message.error(errorText);
         }
     };
 

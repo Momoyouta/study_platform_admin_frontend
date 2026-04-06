@@ -1,5 +1,4 @@
 import http from '@/http/http.js';
-import { message } from 'antd';
 
 /**
  * 带有 Authorization 头的文件下载工具函数
@@ -30,7 +29,6 @@ export const downloadFile = async (params: { schoolId: string | number, fileHash
         window.URL.revokeObjectURL(blobUrl);
     } catch (error: any) {
         console.error('Download failed:', error);
-        message.error('文件下载失败，请稍后重试');
     } finally {
         hide();
     }
