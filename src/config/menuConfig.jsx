@@ -2,9 +2,7 @@ import {
     DashboardOutlined,
     UserOutlined,
     BookOutlined,
-    FileTextOutlined,
     FolderOpenOutlined,
-    SettingOutlined,
     BankOutlined,
 } from '@ant-design/icons';
 
@@ -95,24 +93,7 @@ const menuConfig = [
         key: 'course-manage',
         label: '课程管理',
         icon: <BookOutlined />,
-        children: [
-            {
-                key: 'course-list',
-                label: '课程列表',
-                path: '/course-manage/course-list',
-            },
-            {
-                key: 'category-manage',
-                label: '分类管理',
-                path: '/course-manage/category-manage',
-            },
-        ],
-    },
-    {
-        key: 'content-manage',
-        label: '内容管理',
-        icon: <FileTextOutlined />,
-        path: '/content-manage',
+        path: '/course-manage/course-list',
     },
     {
         key: 'file-manage',
@@ -120,12 +101,6 @@ const menuConfig = [
         icon: <FolderOpenOutlined />,
         path: '/file-manage',
         roles: ['root', 'admin', 'school_root', 'school_admin']
-    },
-    {
-        key: 'system-settings',
-        label: '系统设置',
-        icon: <SettingOutlined />,
-        path: '/system-settings',
     },
 ];
 
