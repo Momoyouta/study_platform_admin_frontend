@@ -28,13 +28,12 @@ import {
     bindCourseMaterial,
     deleteCourseMaterial,
     listCourseMaterial,
-    queryFileChunkAdmin,
     updateCourseMaterial,
 } from '@/http/api.ts';
 import { ChunkUploadType } from '@/type/file.ts';
 import { UploadScenarioMap } from '@/type/map.js';
-import { toViewFileUrl } from '@/utils/fileUrl.ts';
-import VideoChunkUpload from '@/components/VideoChunkUpload';
+import { downloadFile } from '@/utils/download.ts';
+import FileChunkUpload from '@/components/FileChunkUpload';
 import './index.less';
 
 const MATERIAL_UPLOAD_SCENARIO = UploadScenarioMap.TEMP_DOCUMENT;
@@ -94,6 +93,15 @@ const getFileExt = (fileName) => {
     return source.slice(source.lastIndexOf('.') + 1).toLowerCase();
 };
 
+const getFileSuffix = (fileName) => {
+    const source = String(fileName || '').trim();
+    if (!source.includes('.')) {
+        return '';
+    }
+
+    return source.slice(source.lastIndexOf('.'));
+};
+
 const getFileTypeMeta = (fileName, chunkType) => {
     const ext = getFileExt(fileName);
 
@@ -146,7 +154,21 @@ const getFileTypeMeta = (fileName, chunkType) => {
 };
 
 const getMaterialFileName = (record) => {
-    return record?.file_name || record?.chunkFileName || '-';
+    return record?.fileName || record?.file_name || record?.chunkFileName || '-';
+};
+
+const getFileNameBase = (fileName) => {
+    const source = String(fileName || '').trim();
+    if (!source) {
+        return '';
+    }
+
+    const suffix = getFileSuffix(source);
+    if (!suffix) {
+        return source;
+    }
+
+    return source.slice(0, -suffix.length);
 };
 
 const resolveFileId = (payload) => {
@@ -179,58 +201,12 @@ const MaterialManage = ({ courseId, schoolId }) => {
     const [renameModalOpen, setRenameModalOpen] = useState(false);
     const [renameSubmitting, setRenameSubmitting] = useState(false);
     const [editingRecord, setEditingRecord] = useState(null);
+    const editingMaterialName = getMaterialFileName(editingRecord);
+    const editingMaterialSuffix = editingMaterialName && editingMaterialName !== '-' ? getFileSuffix(editingMaterialName) : '';
+    const renameBaseMaxLength = Math.max(1, 255 - editingMaterialSuffix.length);
 
     const normalizedCourseId = normalizeOptionalId(courseId);
     const normalizedSchoolId = normalizeOptionalId(schoolId);
-
-    const fetchChunkMetaMap = useCallback(async (materialList) => {
-        if (!Array.isArray(materialList) || !materialList.length) {
-            return new Map();
-        }
-
-        const responses = await Promise.allSettled(
-            materialList.map((item) => {
-                if (!item?.file_id) {
-                    return Promise.resolve(null);
-                }
-
-                return queryFileChunkAdmin({
-                    id: String(item.file_id),
-                    page: 1,
-                    pageSize: 1,
-                    sortBy: 'updateTime',
-                    sortOrder: 'DESC',
-                    schoolId: normalizedSchoolId,
-                });
-            })
-        );
-
-        const metaMap = new Map();
-        responses.forEach((result, index) => {
-            if (result.status !== 'fulfilled' || !result.value) {
-                return;
-            }
-
-            const detail = result.value?.data?.items?.[0];
-            if (!detail) {
-                return;
-            }
-
-            const fileId = String(materialList[index]?.file_id || '');
-            if (!fileId) {
-                return;
-            }
-
-            metaMap.set(fileId, {
-                fileSize: detail.fileSize,
-                filePath: detail.targetPath || detail.filePath || '',
-                chunkType: detail.type,
-                chunkFileName: detail.fileName,
-            });
-        });
-
-        return metaMap;
-    }, [normalizedSchoolId]);
 
     const fetchList = useCallback(async (pageParams, fileNameKeyword = '') => {
         if (!normalizedCourseId) {
@@ -260,24 +236,30 @@ const MaterialManage = ({ courseId, schoolId }) => {
 
             const list = Array.isArray(res?.data?.list) ? res.data.list : [];
             const nextTotal = Number(res?.data?.total);
-            const fileMetaMap = await fetchChunkMetaMap(list);
 
             if (currentRequestId !== requestIdRef.current) {
                 return;
             }
 
-            const mergedList = list.map((item) => {
-                const fileId = String(item?.file_id || '');
-                const chunkMeta = fileMetaMap.get(fileId) || {};
+            const normalizedList = list.map((item) => {
                 return {
                     ...item,
-                    ...chunkMeta,
+                    fileId: item?.fileId || item?.file_id || '',
+                    fileHash: item?.fileHash || item?.file_hash || '',
+                    fileName: item?.fileName || item?.file_name || '',
+                    fileSize: item?.fileSize ?? item?.file_size,
+                    targetPath: item?.targetPath || item?.filePath || item?.target_path || '',
+                    type: item?.type ?? item?.chunkType,
+                    createTime: item?.createTime || item?.create_time,
+                    updateTime: item?.updateTime || item?.update_time,
+                    creatorId: item?.creatorId || item?.uploader_id,
+                    creatorName: item?.creatorName || item?.uploader_name,
                     key: item.id,
                 };
             });
 
-            setTableData(mergedList);
-            setTotal(Number.isFinite(nextTotal) ? nextTotal : mergedList.length);
+            setTableData(normalizedList);
+            setTotal(Number.isFinite(nextTotal) ? nextTotal : normalizedList.length);
             setPagination((prev) => ({
                 ...prev,
                 current: pageParams.current,
@@ -293,7 +275,7 @@ const MaterialManage = ({ courseId, schoolId }) => {
                 setLoading(false);
             }
         }
-    }, [fetchChunkMetaMap, normalizedCourseId]);
+    }, [normalizedCourseId]);
 
     useEffect(() => {
         if (!normalizedCourseId) {
@@ -350,7 +332,7 @@ const MaterialManage = ({ courseId, schoolId }) => {
         const currentName = getMaterialFileName(record);
         setEditingRecord(record);
         renameForm.setFieldsValue({
-            file_name: currentName === '-' ? '' : currentName,
+            file_name_base: currentName === '-' ? '' : getFileNameBase(currentName),
         });
         setRenameModalOpen(true);
     }, [renameForm]);
@@ -364,9 +346,11 @@ const MaterialManage = ({ courseId, schoolId }) => {
             }
 
             setRenameSubmitting(true);
+            const originalName = getMaterialFileName(editingRecord);
+            const lockedSuffix = originalName && originalName !== '-' ? getFileSuffix(originalName) : '';
             const payload = {
                 material_id: String(editingRecord.id),
-                file_name: String(values.file_name || '').trim(),
+                file_name: `${String(values.file_name_base || '').trim()}${lockedSuffix}`,
             };
 
             const res = await updateCourseMaterial(payload);
@@ -390,7 +374,7 @@ const MaterialManage = ({ courseId, schoolId }) => {
         } finally {
             setRenameSubmitting(false);
         }
-    }, [closeRenameModal, editingRecord?.id, fetchList, keyword, pagination, renameForm]);
+    }, [closeRenameModal, editingRecord, fetchList, keyword, pagination, renameForm]);
 
     const handleDeleteRecords = (records) => {
         if (!Array.isArray(records) || !records.length) {
@@ -432,36 +416,28 @@ const MaterialManage = ({ courseId, schoolId }) => {
         });
     };
 
-    const handleDownload = async (record) => {
-        let path = record?.filePath || '';
+    const handleDownload = useCallback(async (record) => {
+        const downloadSchoolId = String(
+            record?.schoolId || record?.school_id || normalizedSchoolId || ''
+        ).trim();
+        const downloadFileHash = String(record?.fileHash || record?.file_hash || '').trim();
 
-        if (!path && record?.file_id) {
-            try {
-                const queryRes = await queryFileChunkAdmin({
-                    id: String(record.file_id),
-                    page: 1,
-                    pageSize: 1,
-                    sortBy: 'updateTime',
-                    sortOrder: 'DESC',
-                    schoolId: normalizedSchoolId,
-                });
-                if (isSuccessResponse(queryRes)) {
-                    const detail = queryRes?.data?.items?.[0];
-                    path = detail?.targetPath || detail?.filePath || '';
-                }
-            } catch (error) {
-                console.error('Resolve download path failed', error);
-            }
-        }
-
-        const fileUrl = toViewFileUrl(path);
-        if (!fileUrl) {
+        if (!downloadSchoolId || !downloadFileHash) {
             message.warning('暂无可下载文件地址');
             return;
         }
 
-        window.open(fileUrl, '_blank', 'noopener,noreferrer');
-    };
+        const materialFileName = getMaterialFileName(record);
+        const downloadFileName = materialFileName && materialFileName !== '-'
+            ? materialFileName
+            : downloadFileHash;
+
+        await downloadFile({
+            schoolId: downloadSchoolId,
+            fileHash: downloadFileHash,
+            fileName: downloadFileName,
+        });
+    }, [normalizedSchoolId]);
 
     const rowSelection = useMemo(() => ({
         selectedRowKeys,
@@ -475,8 +451,8 @@ const MaterialManage = ({ courseId, schoolId }) => {
     const columns = [
         {
             title: '文件名',
-            dataIndex: 'file_name',
-            key: 'file_name',
+            dataIndex: 'fileName',
+            key: 'fileName',
             render: (_, record) => (
                 <span className="file-name-cell" title={getMaterialFileName(record)}>
                     {getMaterialFileName(record)}
@@ -488,7 +464,7 @@ const MaterialManage = ({ courseId, schoolId }) => {
             key: 'file_type',
             width: 180,
             render: (_, record) => {
-                const typeMeta = getFileTypeMeta(getMaterialFileName(record), record?.chunkType);
+                const typeMeta = getFileTypeMeta(getMaterialFileName(record), record?.type);
                 return (
                     <span className="material-type-cell">
                         {typeMeta.icon}
@@ -507,8 +483,8 @@ const MaterialManage = ({ courseId, schoolId }) => {
         },
         {
             title: '创建日期',
-            dataIndex: 'create_time',
-            key: 'create_time',
+            dataIndex: 'createTime',
+            key: 'createTime',
             width: 190,
             render: (value) => (
                 <span className="material-date-cell">{formatDateValue(value)}</span>
@@ -518,35 +494,43 @@ const MaterialManage = ({ courseId, schoolId }) => {
             title: '操作',
             key: 'action',
             width: 140,
-            render: (_, record) => (
-                <Space size={4} className="material-action-group">
-                    <Tooltip title="修改文件名">
-                        <Button
-                            type="text"
-                            icon={<EditOutlined />}
-                            className="material-action-btn"
-                            onClick={() => handleOpenRenameModal(record)}
-                        />
-                    </Tooltip>
-                    <Tooltip title="下载">
-                        <Button
-                            type="text"
-                            icon={<DownloadOutlined />}
-                            className="material-action-btn"
-                            onClick={() => handleDownload(record)}
-                        />
-                    </Tooltip>
-                    <Tooltip title="删除">
-                        <Button
-                            type="text"
-                            danger
-                            icon={<DeleteOutlined />}
-                            className="material-action-btn delete"
-                            onClick={() => handleDeleteRecords([record])}
-                        />
-                    </Tooltip>
-                </Space>
-            ),
+            render: (_, record) => {
+                const downloadSchoolId = String(
+                    record?.schoolId || record?.school_id || normalizedSchoolId || ''
+                ).trim();
+                const downloadFileHash = String(record?.fileHash || record?.file_hash || '').trim();
+                const canDownload = !!(downloadSchoolId && downloadFileHash);
+
+                return (
+                    <Space size={4} className="material-action-group">
+                        <Tooltip title="修改文件名">
+                            <Button
+                                type="text"
+                                icon={<EditOutlined />}
+                                className="material-action-btn"
+                                onClick={() => handleOpenRenameModal(record)}
+                            />
+                        </Tooltip>
+                        <Tooltip title={canDownload ? '下载' : '暂无可下载文件地址'}>
+                            <Button
+                                type="text"
+                                icon={<DownloadOutlined />}
+                                className="material-action-btn"
+                                onClick={() => handleDownload(record)}
+                            />
+                        </Tooltip>
+                        <Tooltip title="删除">
+                            <Button
+                                type="text"
+                                danger
+                                icon={<DeleteOutlined />}
+                                className="material-action-btn delete"
+                                onClick={() => handleDeleteRecords([record])}
+                            />
+                        </Tooltip>
+                    </Space>
+                );
+            },
         },
     ];
 
@@ -571,7 +555,7 @@ const MaterialManage = ({ courseId, schoolId }) => {
                         allowClear
                     />
 
-                    <VideoChunkUpload
+                    <FileChunkUpload
                         mode="button"
                         scenario={MATERIAL_UPLOAD_SCENARIO}
                         uploadType={ChunkUploadType.NORMAL}
@@ -637,7 +621,7 @@ const MaterialManage = ({ courseId, schoolId }) => {
                         <Input value={getMaterialFileName(editingRecord)} disabled />
                     </Form.Item>
                     <Form.Item
-                        name="file_name"
+                        name="file_name_base"
                         label="新文件名"
                         rules={[
                             { required: true, message: '请输入新文件名' },
@@ -649,10 +633,27 @@ const MaterialManage = ({ courseId, schoolId }) => {
                                     return Promise.reject(new Error('请输入新文件名'));
                                 },
                             },
-                            { max: 255, message: '文件名长度不能超过 255 个字符' },
+                            {
+                                validator: (_, value) => {
+                                    const nextBase = String(value || '').trim();
+                                    if (!nextBase) {
+                                        return Promise.resolve();
+                                    }
+
+                                    if (`${nextBase}${editingMaterialSuffix}`.length > 255) {
+                                        return Promise.reject(new Error('文件名长度不能超过 255 个字符'));
+                                    }
+
+                                    return Promise.resolve();
+                                },
+                            },
                         ]}
                     >
-                        <Input placeholder="请输入新文件名" maxLength={255} />
+                        <Input
+                            placeholder="请输入新文件名"
+                            maxLength={renameBaseMaxLength}
+                            addonAfter={editingMaterialSuffix || undefined}
+                        />
                     </Form.Item>
                 </Form>
             </Modal>

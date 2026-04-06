@@ -144,14 +144,23 @@
 
     .material-action-group {
         .material-action-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
             width: 30px;
             height: 30px;
             color: #1f2937;
             border-radius: 8px;
+            text-decoration: none;
 
             &:hover {
                 background: #f2f4f7;
             }
+        }
+
+        .material-action-link.disabled {
+            color: #cbd5e1;
+            cursor: not-allowed;
         }
 
         .material-action-btn.delete {

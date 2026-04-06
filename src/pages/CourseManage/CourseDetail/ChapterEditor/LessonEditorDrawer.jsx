@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Button, Drawer, Form, Input, Modal, Space, Tooltip, message } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
-import VideoChunkUpload from '@/components/VideoChunkUpload';
+import FileChunkUpload from '@/components/FileChunkUpload';
 import { UploadScenarioMap } from '@/type/map.js';
 
 const { TextArea } = Input;
@@ -143,7 +143,7 @@ const LessonEditorDrawer = ({ visible, lesson, onClose, onChange, onSave, onImme
 
       <div className="resource-section" style={{ marginTop: '24px' }}>
         <p style={{ fontWeight: '500', marginBottom: '8px', fontSize: '14px', color: 'rgba(0, 0, 0, 0.88)' }}>教学视频</p>
-        <VideoChunkUpload
+        <FileChunkUpload
           onChange={handleChunkUploadSuccess}
           scenario={UploadScenarioMap.TEMP_VIDEO}
           previewPath={resourceState?.video_path}

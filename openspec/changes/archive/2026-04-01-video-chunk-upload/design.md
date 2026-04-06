@@ -2,7 +2,7 @@
 
 ## Overview
 
-本设计旨在封装一个通用的 `VideoChunkUpload` 组件，支持大文件分片上传、断点续传和秒传。组件将基于 Ant Design 的 `Upload` 组件进行定制，利用 `spark-md5` 进行文件哈希计算。
+本设计旨在封装一个通用的 `FileChunkUpload` 组件，支持大文件分片上传、断点续传和秒传。组件将基于 Ant Design 的 `Upload` 组件进行定制，利用 `spark-md5` 进行文件哈希计算。
 
 ## Component Architecture
 
@@ -27,7 +27,7 @@
 - `getChunkProgress(fileHash: string)`
 - `mergeChunks(data: MergeChunkDto)`
 
-### 组件 Props (`VideoChunkUploadProps`)
+### 组件 Props (`FileChunkUploadProps`)
 - `onChange: (path: string) => void`：上传完成后返回文件路径。
 - `scenario: string`：业务场景（avatar, school_resource, course_homework）。
 - `businessConfig: { schoolId?, courseId?, homeworkId? }`：关联的业务 ID。

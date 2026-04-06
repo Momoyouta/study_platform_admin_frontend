@@ -34,7 +34,7 @@ export interface ChunkUploadResult {
     rawMergeData?: Record<string, unknown>;
 }
 
-interface VideoChunkUploadProps {
+interface FileChunkUploadProps {
     onChange?: (path: string) => void;
     onUploaded?: (result: ChunkUploadResult) => void | Promise<void>;
     scenario: string;
@@ -57,7 +57,7 @@ interface VideoChunkUploadProps {
     successMessage?: string;
 }
 
-export interface VideoChunkUploadHandle {
+export interface FileChunkUploadHandle {
     merge: () => Promise<string | undefined>;
 }
 
@@ -121,7 +121,7 @@ const getErrorMessage = (error: unknown, fallback: string) => {
     return fallback;
 };
 
-const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProps>(({
+const FileChunkUpload = forwardRef<FileChunkUploadHandle, FileChunkUploadProps>(({
     onChange,
     onUploaded,
     scenario,
@@ -561,4 +561,4 @@ const VideoChunkUpload = forwardRef<VideoChunkUploadHandle, VideoChunkUploadProp
         </div>
     );
 });
-export default VideoChunkUpload;
+export default FileChunkUpload;

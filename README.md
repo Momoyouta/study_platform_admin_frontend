@@ -27,7 +27,7 @@ E:\毕设\study_platform_admin_frontend\
 │   │   ├── Sidebar/
 │   │   ├── TopBar/
 │   │   ├── UserEditModal/
-│   │   └── VideoChunkUpload/
+│   │   └── FileChunkUpload/
 │   ├── config/             # 项目配置文件
 │   ├── env/                # 环境变量配置 (.env.dev, .env.prod)
 │   ├── http/               # 网络请求配置及封装

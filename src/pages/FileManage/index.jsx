@@ -20,6 +20,7 @@ import {
     updateFileChunkFilename,
 } from '@/http/api.ts';
 import { ChunkUploadType } from '@/type/file.ts';
+import { downloadFile } from '@/utils/download.ts';
 import './index.less';
 
 const { Option } = Select;
@@ -95,6 +96,29 @@ const formatFileSize = (size) => {
         return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
     }
     return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
+};
+
+const getFileSuffix = (fileName) => {
+    const source = String(fileName || '').trim();
+    if (!source.includes('.')) {
+        return '';
+    }
+
+    return source.slice(source.lastIndexOf('.'));
+};
+
+const getFileNameBase = (fileName) => {
+    const source = String(fileName || '').trim();
+    if (!source) {
+        return '';
+    }
+
+    const suffix = getFileSuffix(source);
+    if (!suffix) {
+        return source;
+    }
+
+    return source.slice(0, -suffix.length);
 };
 
 const copyCellLinkStyle = {
@@ -201,6 +225,9 @@ const FileManage = observer(() => {
     const mySchoolId = Store.UserStore.userBaseInfo?.schoolId;
 
     const showPlatformEmptyTip = isPlatformAdmin && !hasQueried && !loading;
+    const editingFileName = String(editingRecord?.fileName || '').trim();
+    const editingFileSuffix = getFileSuffix(editingFileName);
+    const renameBaseMaxLength = Math.max(1, 255 - editingFileSuffix.length);
 
     const buildQueryPayload = useCallback((pageParams, searchParams) => {
         const payload = {
@@ -302,7 +329,7 @@ const FileManage = observer(() => {
 
     const handleOpenRenameModal = (record) => {
         setEditingRecord(record);
-        renameForm.setFieldsValue({ fileName: record.fileName });
+        renameForm.setFieldsValue({ fileNameBase: getFileNameBase(record?.fileName) });
         setRenameModalOpen(true);
     };
 
@@ -316,7 +343,7 @@ const FileManage = observer(() => {
 
             await updateFileChunkFilename({
                 id: editingRecord.id,
-                fileName: values.fileName,
+                fileName: `${String(values.fileNameBase || '').trim()}${getFileSuffix(editingRecord?.fileName)}`,
             });
 
             message.success('文件名更新成功');
@@ -437,6 +464,25 @@ const FileManage = observer(() => {
             message.error('迁移失败，请检查状态、类型和目标学校后重试');
         }
     };
+
+    const handleDownload = useCallback(async (record) => {
+        const downloadSchoolId = String(
+            record?.schoolId || form.getFieldValue('schoolId') || mySchoolId || ''
+        ).trim();
+        const downloadFileHash = String(record?.fileHash || '').trim();
+
+        if (!downloadSchoolId || !downloadFileHash) {
+            message.warning('缺少 schoolId 或 fileHash，无法下载');
+            return;
+        }
+
+        const downloadFileName = String(record?.fileName || '').trim() || downloadFileHash;
+        await downloadFile({
+            schoolId: downloadSchoolId,
+            fileHash: downloadFileHash,
+            fileName: downloadFileName,
+        });
+    }, [form, mySchoolId]);
 
     const moveRuleHint = useMemo(() => {
         if (!movingRecords.length) {
@@ -599,14 +645,21 @@ const FileManage = observer(() => {
         {
             title: '操作',
             key: 'action',
-            width: 160,
+            width: 220,
             fixed: 'right',
             render: (_, record) => {
                 const moveDisabled = !canMoveRecord(record);
+                const canDownload = !!(String(record?.fileHash || '').trim() && String(record?.schoolId || form.getFieldValue('schoolId') || mySchoolId || '').trim());
 
                 return (
                     <Space size={4} wrap>
                         <a onClick={() => handleOpenRenameModal(record)}>改名</a>
+                        <a
+                            className={canDownload ? '' : 'disabled-action'}
+                            onClick={() => handleDownload(record)}
+                        >
+                            下载
+                        </a>
                         <a style={{ color: 'red' }} onClick={() => handleDeleteRecords([record])}>删除</a>
                         <a
                             className={moveDisabled ? 'disabled-action' : ''}
@@ -718,14 +771,31 @@ const FileManage = observer(() => {
                         <Input value={editingRecord?.id} disabled />
                     </Form.Item>
                     <Form.Item
-                        name="fileName"
+                        name="fileNameBase"
                         label="新文件名"
                         rules={[
                             { required: true, message: '请输入新文件名' },
-                            { max: 255, message: '文件名长度不能超过 255' },
+                            {
+                                validator: (_, value) => {
+                                    const nextBase = String(value || '').trim();
+                                    if (!nextBase) {
+                                        return Promise.resolve();
+                                    }
+
+                                    if (`${nextBase}${editingFileSuffix}`.length > 255) {
+                                        return Promise.reject(new Error('文件名长度不能超过 255'));
+                                    }
+
+                                    return Promise.resolve();
+                                },
+                            },
                         ]}
                     >
-                        <Input placeholder="请输入新文件名" />
+                        <Input
+                            placeholder="请输入新文件名"
+                            maxLength={renameBaseMaxLength}
+                            addonAfter={editingFileSuffix || undefined}
+                        />
                     </Form.Item>
                 </Form>
             </Modal>

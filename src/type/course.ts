@@ -196,11 +196,24 @@ export interface CourseMaterialListParams {
 
 export interface CourseMaterialItemDto {
   id: string;
-  file_id: string;
-  file_name: string;
-  uploader_id: string;
+  fileId: string;
+  fileHash: string;
+  fileName: string;
+  fileSize?: number | string;
+  targetPath?: string | null;
+  type?: number | null;
+  creatorId?: string;
+  schoolId?: string;
+  createTime?: string;
+  updateTime?: string;
+  creatorName?: string;
+  // 兼容历史接口字段
+  file_id?: string;
+  file_name?: string;
+  uploader_id?: string;
   uploader_name?: string;
   create_time?: string;
+  update_time?: string;
 }
 
 export interface CourseMaterialListResponseDto {

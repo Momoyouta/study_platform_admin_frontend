@@ -17,3 +17,5 @@ export const toViewFileUrl = (path?: string) => {
 
     return `${normalizedBaseUrl}${normalizedPath}`;
 };
+
+export const toViewUrl = (path?: string) => toViewFileUrl(path);

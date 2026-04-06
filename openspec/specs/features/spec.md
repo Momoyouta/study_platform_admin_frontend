@@ -118,7 +118,7 @@
 
 ## 5. 视频资源管理 (Video Resource Management)
 
-系统 MUST 提供基于分片的视频上传能力，以支持 GB 级大文件的稳定传输。所有视频上传组件 MUST 遵循 `VideoChunkUpload` 的协议规范。
+系统 MUST 提供基于分片的视频上传能力，以支持 GB 级大文件的稳定传输。所有视频上传组件 MUST 遵循 `FileChunkUpload` 的协议规范。
 
 ### Requirement: 大文件分片上传与断点续传
 系统 MUST 自动将大视频切分为固定分片 (默认 5MB)，并逐个（串行或并行）发往后端。必须记录所有分片的上传状态以支持网络中断后的进度恢复。

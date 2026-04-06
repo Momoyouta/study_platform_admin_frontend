@@ -2,8 +2,8 @@
 
 ## Component Definition
 
-- **Name**: `VideoChunkUpload`
-- **Path**: `src/components/VideoChunkUpload/index.tsx`
+- **Name**: `FileChunkUpload`
+- **Path**: `src/components/FileChunkUpload/index.tsx`
 - **Type**: Functional Component with Hooks
 
 ## Props
