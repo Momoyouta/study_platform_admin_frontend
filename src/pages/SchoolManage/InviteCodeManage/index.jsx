@@ -14,6 +14,32 @@ const InviteTypeMap = {
     2: '学生加入课程',
 };
 
+const fallbackCopyText = (text) => {
+    if (typeof document === 'undefined') {
+        return false;
+    }
+
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', 'true');
+    textarea.style.position = 'fixed';
+    textarea.style.left = '-9999px';
+    textarea.style.top = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, text.length);
+
+    let copied = false;
+    try {
+        copied = document.execCommand('copy');
+    } catch (error) {
+        copied = false;
+    }
+
+    document.body.removeChild(textarea);
+    return copied;
+};
+
 const InviteCodeManage = observer(() => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
@@ -164,6 +190,38 @@ const InviteCodeManage = observer(() => {
         });
     };
 
+    const copyInviteCode = async (value) => {
+        if (!value && value !== 0) {
+            return;
+        }
+
+        const text = String(value);
+
+        try {
+            const canUseClipboardApi = typeof navigator !== 'undefined' && navigator?.clipboard?.writeText && typeof window !== 'undefined' && window.isSecureContext;
+            if (canUseClipboardApi) {
+                await navigator.clipboard.writeText(text);
+                message.success('邀请码已复制');
+                return;
+            }
+
+            if (fallbackCopyText(text)) {
+                message.success('邀请码已复制');
+                return;
+            }
+
+            message.warning('当前环境不支持自动复制，请手动复制');
+        } catch (error) {
+            if (fallbackCopyText(text)) {
+                message.success('邀请码已复制');
+                return;
+            }
+
+            console.error('Copy invite code failed', error);
+            message.error('复制失败，请手动复制');
+        }
+    };
+
     const columns = [
         {
             title: '邀请码',
@@ -173,10 +231,7 @@ const InviteCodeManage = observer(() => {
             ellipsis: true,
             render: (text) => (
                 <a style={{width: '120px', textOverflow: 'ellipsis', overflow: 'hidden', display: 'inline-block'}}
-                    onClick={() => {
-                        navigator.clipboard.writeText(text);
-                        message.success('邀请码已复制');
-                    }}
+                    onClick={() => copyInviteCode(text)}
                 >
                     {text}
                 </a>
