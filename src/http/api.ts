@@ -321,6 +321,15 @@ export const getCourseLessonOutline = (id: string | number, source?: CourseOutli
     return http.get(`/course/getCourseLessonOutline/${id}`, source ? { params: { source } } : undefined);
 }
 
+export const queryLessonVideoLibraryAdmin = (params: {
+    course_id: string;
+    page?: number;
+    pageSize?: number;
+    filename?: string;
+}) => {
+    return http.get('/course/queryLessonVideoLibraryAdmin', { params });
+}
+
 export const updateChapterTitleQuickAdmin = (data: QuickUpdateChapterTitleDto) => {
     return http.put('/course/updateChapterTitleQuickAdmin', data);
 }

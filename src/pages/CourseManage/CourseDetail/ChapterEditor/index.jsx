@@ -704,6 +704,7 @@ const CourseOutline = ({ courseId }) => {
       <LessonEditorDrawer 
         key={editingLesson?.lesson_id || 'lesson-drawer-empty'}
         visible={!!editingLesson}
+        courseId={courseId}
         lesson={editingLesson}
         onClose={() => setEditingLesson(null)}
         onChange={handleLessonPreviewChange}
