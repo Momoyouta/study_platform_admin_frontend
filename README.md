@@ -107,4 +107,8 @@ pnpm run build
 
 - **变更建议**: 使用 `openspec-propose` 发起。
 - **任务实施**: 使用 `openspec-apply-change` 执行。
-- **规范定义**: 详见 `openspec/config.yaml`。
+- **规范定义**: 详见 `openspec/config.yaml`.
+
+## 规则说明
+
+- **接口调用错误提示**：接口调用不需要在 `catch` 中 `message` 提示错误信息，因为前端有拦截器会统一处理错误提示。
