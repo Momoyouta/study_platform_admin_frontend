@@ -36,6 +36,24 @@ import type {
     UpdateFileChunkFilenameDto,
     UpdateFileChunkFilenameResponseDto
 } from "@/type/file";
+import type {
+    AssetSummaryDto,
+    CourseSummaryDto,
+    LearningSummaryDto,
+    PeopleSummaryDto,
+    PlatformSchoolTotalDto,
+    PlatformUserTotalDto,
+    SchoolFunnelDto,
+    SchoolStatisticsQueryParams,
+    StatisticsQueryParams,
+    StorageUsageDto
+} from "@/type/statistics";
+
+type ApiResult<T> = {
+    code: number;
+    msg: string;
+    data: T;
+};
 
 export const login = (account: string, pwd: string) => {
     return http.post('/auth/admin/login', {
@@ -369,6 +387,43 @@ export const deleteCourseMaterial = (data: DeleteCourseMaterialDto) => {
         msg: string;
         data: DeleteCourseMaterialResponseDto;
     }>;
+}
+
+// ================= 管理端统计 (Statistics) =================
+export const getPlatformSchoolFunnel = (params: StatisticsQueryParams = {}) => {
+    return http.get('/admin/statistics/platform/school-funnel', { params }) as Promise<ApiResult<SchoolFunnelDto>>;
+}
+
+export const getPlatformSchoolTotal = (params: StatisticsQueryParams = {}) => {
+    return http.get('/admin/statistics/platform/school-total', { params }) as Promise<ApiResult<PlatformSchoolTotalDto>>;
+}
+
+export const getPlatformUserTotal = (params: StatisticsQueryParams = {}) => {
+    return http.get('/admin/statistics/platform/user-total', { params }) as Promise<ApiResult<PlatformUserTotalDto>>;
+}
+
+export const getPlatformStorageUsage = (params: StatisticsQueryParams = {}) => {
+    return http.get('/admin/statistics/platform/storage-usage', { params }) as Promise<ApiResult<StorageUsageDto>>;
+}
+
+export const getPlatformCourseSummary = (params: StatisticsQueryParams = {}) => {
+    return http.get('/admin/statistics/platform/course-summary', { params }) as Promise<ApiResult<CourseSummaryDto>>;
+}
+
+export const getSchoolPeopleSummary = (params: SchoolStatisticsQueryParams = {}) => {
+    return http.get('/school/statistics/people-summary', { params }) as Promise<ApiResult<PeopleSummaryDto>>;
+}
+
+export const getSchoolCourseSummary = (params: SchoolStatisticsQueryParams = {}) => {
+    return http.get('/school/statistics/course-summary', { params }) as Promise<ApiResult<CourseSummaryDto>>;
+}
+
+export const getSchoolAssetSummary = (params: SchoolStatisticsQueryParams = {}) => {
+    return http.get('/school/statistics/asset-summary', { params }) as Promise<ApiResult<AssetSummaryDto>>;
+}
+
+export const getSchoolLearningSummary = (params: SchoolStatisticsQueryParams = {}) => {
+    return http.get('/school/statistics/learning-summary', { params }) as Promise<ApiResult<LearningSummaryDto>>;
 }
 
 // ================= 额外补充 =================

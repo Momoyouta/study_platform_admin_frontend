@@ -1,0 +1,110 @@
+.dashboard-page {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.dashboard-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.dashboard-header .ant-typography {
+    margin-bottom: 0;
+}
+
+.dashboard-card {
+    height: 100%;
+}
+
+.dashboard-card .ant-card-body {
+    min-height: 220px;
+}
+
+.dashboard-card-loading {
+    min-height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-stat-center {
+    min-height: 260px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dashboard-storage-overview {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin-bottom: 8px;
+}
+
+.dashboard-inline-stats {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.dashboard-inline-stat-item {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px;
+    border-radius: 6px;
+    background: #fafafa;
+}
+
+.dashboard-progress-wrap {
+    margin-top: 8px;
+}
+
+.dashboard-progress-title {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: #595959;
+}
+
+.dashboard-progress-list {
+    margin-top: 8px;
+}
+
+.dashboard-college-chart {
+    margin-top: 20px;
+}
+
+.dashboard-subtitle {
+    display: inline-block;
+    margin-bottom: 8px;
+    color: #595959;
+}
+
+.dashboard-school-placeholder {
+    min-height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fafafa;
+    border: 1px dashed #d9d9d9;
+    border-radius: 8px;
+}
+
+@media (max-width: 768px) {
+    .dashboard-storage-overview {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-inline-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .dashboard-card .ant-card-body {
+        min-height: 160px;
+    }
+}
