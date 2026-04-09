@@ -248,6 +248,27 @@ export const deleteSchoolAdmin = (id: number | string) => {
     return http.delete(`/school-admin/${id}`);
 }
 
+// ================= 学院管理 (College) =================
+export const getCollegeList = (params: any) => {
+    return http.get('/college', { params });
+}
+
+export const getCollegeById = (id: number | string) => {
+    return http.get(`/college/${id}`);
+}
+
+export const createCollege = (data: { name: string; school_id: number | string }) => {
+    return http.post('/college', data);
+}
+
+export const updateCollege = (id: number | string, data: { name?: string }) => {
+    return http.patch(`/college/${id}`, data);
+}
+
+export const deleteCollege = (id: number | string) => {
+    return http.delete(`/college/${id}`);
+}
+
 // ================= 邀请码管理 (Invite) =================
 /**
  * 分页获取邀请码列表

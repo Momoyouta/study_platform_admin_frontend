@@ -278,7 +278,7 @@ const CourseDetail = () => {
                     </div>
                 </TabPane>
 
-                <TabPane tab="作业管理" key="homework">
+                {/* <TabPane tab="作业管理" key="homework">
                     <div className="placeholder-content">
                         <Alert message="作业管理功能暂未开放" type="info" showIcon />
                     </div>
@@ -287,7 +287,7 @@ const CourseDetail = () => {
                     <div className="placeholder-content">
                         <Alert message="统计信息功能暂未开放" type="info" showIcon />
                     </div>
-                </TabPane>
+                </TabPane> */}
             </Tabs>
         </div>
     );

@@ -78,14 +78,48 @@ const StudentList = observer(() => {
         fetchList(newPagination, form.getFieldsValue());
     };
 
+    const getStudentCollegeName = (record) => {
+        return record?.collegeName || record?.college_name || record?.colleageName || record?.colleage_name || '-';
+    };
+
+    const getStudentCollegeId = (record) => {
+        return record?.college_id || record?.collegeId || record?.colleage_id || record?.colleageId || '';
+    };
+
+    const getStudentApiId = (record) => {
+        return record?.student_id || record?.studentId || record?.id || record?.userId;
+    };
+
     const handleEdit = (record) => {
-        setEditingUser(record);
+        setEditingUser({
+            ...record,
+            college_id: getStudentCollegeId(record),
+            grade: record?.grade || '',
+        });
         setIsModalVisible(true);
     };
 
     const handleEditSubmit = async (payload) => {
         try {
-            await updateStudent(editingUser.id || editingUser.userId, payload);
+            const endpointId = getStudentApiId(editingUser);
+            if (!endpointId) {
+                message.error('未找到学生ID');
+                return;
+            }
+
+            const schoolId = editingUser?.school_id ?? editingUser?.schoolId ?? mySchoolId;
+            const studentId =
+                editingUser?.student_id ??
+                editingUser?.studentId ??
+                editingUser?.id ??
+                editingUser?.userId;
+
+            const editPayload = {
+                ...payload,
+                school_id: schoolId,
+            };
+
+            await updateStudent(endpointId, editPayload);
             message.success('更新成功');
             setIsModalVisible(false);
             fetchList(pagination, form.getFieldsValue());
@@ -97,7 +131,13 @@ const StudentList = observer(() => {
     };
 
     const handleStatusChange = (record, status) => {
-        updateStudent(record.id || record.userId, { status })
+        const endpointId = getStudentApiId(record);
+        if (!endpointId) {
+            message.error('未找到学生ID');
+            return;
+        }
+
+        updateStudent(endpointId, { status })
             .then(() => {
                 message.success('状态更新成功');
                 fetchList(pagination, form.getFieldsValue());
@@ -151,15 +191,17 @@ const StudentList = observer(() => {
             render: (text) => text || '-',
         },
         {
-            title: '所属机构',
-            key: 'organization',
-            width: 120,
-            render: (_, record) => {
-                if (!record.school_id || record.school_id === '0' || record.school_id === '') {
-                    return <Tag color="geekblue">平台</Tag>;
-                }
-                return <Tag color="cyan">学校</Tag>;
-            },
+            title: '学院',
+            key: 'collegeName',
+            width: 140,
+            render: (_, record) => getStudentCollegeName(record),
+        },
+        {
+            title: '年级',
+            dataIndex: 'grade',
+            key: 'grade',
+            width: 100,
+            render: (text) => text || '-',
         },
         {
             title: '性别',
@@ -265,9 +307,13 @@ const StudentList = observer(() => {
                 record={editingUser}
                 onSubmit={handleEditSubmit}
                 onCancel={() => setIsModalVisible(false)}
-                extraFields={[{ name: 'student_number', label: '学号', placeholder: '请输入学号' }]}
+                extraFields={[
+                    { name: 'student_number', label: '学号', placeholder: '请输入学号' },
+                    { name: 'college_id', label: '学院ID', placeholder: '请输入学院ID' },
+                    { name: 'grade', label: '年级', placeholder: '请输入年级' },
+                ]}
                 avatarFieldKey="avatar"
-                note="*注：ID、账号、归属机构等关键信息不可通过普通编辑接口修改。"
+                note="*注：ID、账号等关键信息不可通过普通编辑接口修改。支持编辑学号、学院ID、年级。"
             />
         </div>
     );

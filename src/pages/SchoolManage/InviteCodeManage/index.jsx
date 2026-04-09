@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { Form, Input, Button, Table, Space, Tag, message, Modal, Select } from 'antd';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getInviteList, createInvite, deleteInvite } from '@/http/api.ts';
 import Store from '@/store/index.ts';
 import moment from 'moment';
@@ -32,7 +32,7 @@ const fallbackCopyText = (text) => {
     let copied = false;
     try {
         copied = document.execCommand('copy');
-    } catch (error) {
+    } catch {
         copied = false;
     }
 
@@ -56,7 +56,7 @@ const InviteCodeManage = observer(() => {
     const isPlatformAdmin = currentUserRoles.includes('root') || currentUserRoles.includes('admin');
     const mySchoolId = Store.UserStore.userBaseInfo?.schoolId;
 
-    const fetchList = (pageParams = pagination, searchParams = form.getFieldsValue()) => {
+    const fetchList = useCallback((pageParams, searchParams) => {
         const params = {
             page: pageParams.current,
             pageSize: pageParams.pageSize,
@@ -65,9 +65,6 @@ const InviteCodeManage = observer(() => {
 
         if (!isPlatformAdmin) {
             params.school_id = mySchoolId;
-        } else if (!params.school_id) {
-            // 平台管理员必须输入学校ID才能查询
-            return;
         }
 
         // 移除空字段
@@ -81,7 +78,12 @@ const InviteCodeManage = observer(() => {
         getInviteList(params)
             .then(res => {
                 if (res.code === 200 || res.data) {
-                    setData(res.data.list || []);
+                    const sortedList = [...(res.data.list || [])].sort((a, b) => {
+                        const aTime = Number(a?.create_time || 0);
+                        const bTime = Number(b?.create_time || 0);
+                        return bTime - aTime;
+                    });
+                    setData(sortedList);
                     setTotal(res.data.total || 0);
                 }
             })
@@ -92,25 +94,44 @@ const InviteCodeManage = observer(() => {
             .finally(() => {
                 setLoading(false);
             });
-    };
+    }, [isPlatformAdmin, mySchoolId]);
 
     useEffect(() => {
-        if (!isPlatformAdmin) {
-            fetchList();
-        }
-    }, []);
+        fetchList({ current: 1, pageSize: 10 }, form.getFieldsValue());
+    }, [fetchList, form]);
 
     useEffect(() => {
-        if (selectedCreateType !== 2) {
-            createForm.setFieldValue('course_id', undefined);
+        if (selectedCreateType === 0) {
+            createForm.setFieldsValue({
+                grade: undefined,
+                teaching_group_id: undefined,
+            });
+            return;
         }
+
+        if (selectedCreateType === 1) {
+            createForm.setFieldsValue({
+                teaching_group_id: undefined,
+            });
+            return;
+        }
+
+        if (selectedCreateType === 2) {
+            createForm.setFieldsValue({
+                grade: undefined,
+                college_id: undefined,
+            });
+            return;
+        }
+
+        createForm.setFieldsValue({
+            grade: undefined,
+            college_id: undefined,
+            teaching_group_id: undefined,
+        });
     }, [selectedCreateType, createForm]);
 
     const onSearch = (values) => {
-        if (isPlatformAdmin && !values.school_id) {
-            message.warning('平台管理员请先填入学校ID才能进行查询！');
-            return;
-        }
         const newPagination = { ...pagination, current: 1 };
         setPagination(newPagination);
         fetchList(newPagination, values);
@@ -118,17 +139,14 @@ const InviteCodeManage = observer(() => {
 
     const onReset = () => {
         form.resetFields();
-        if (!isPlatformAdmin) {
-            onSearch(form.getFieldsValue());
-        } else {
-            setData([]);
-            setTotal(0);
-        }
+        onSearch(form.getFieldsValue());
     };
 
-    const handleTableChange = (newPagination) => {
+    const handleTableChange = (newPagination, _filters, _sorter, extra) => {
         setPagination(newPagination);
-        fetchList(newPagination);
+        if (extra?.action === 'paginate') {
+            fetchList(newPagination, form.getFieldsValue());
+        }
     };
 
     const handleDelete = (code) => {
@@ -139,7 +157,7 @@ const InviteCodeManage = observer(() => {
                 deleteInvite(code)
                     .then(() => {
                         message.success('删除成功');
-                        fetchList();
+                        fetchList(pagination, form.getFieldsValue());
                     })
                     .catch(err => {
                         console.error('Delete failed', err);
@@ -161,13 +179,19 @@ const InviteCodeManage = observer(() => {
             const payload = {
                 type: values.type,
                 school_id: isPlatformAdmin ? values.school_id : mySchoolId,
-                grade: values.grade,
-                class_id: values.class_id,
                 ttl: ttlInSeconds,
             };
 
+            if (values.type === 0 || values.type === 1) {
+                payload.college_id = values.college_id;
+            }
+
+            if (values.type === 1) {
+                payload.grade = values.grade;
+            }
+
             if (values.type === 2) {
-                payload.course_id = values.course_id;
+                payload.teaching_group_id = values.teaching_group_id;
             }
 
             Object.keys(payload).forEach(key => {
@@ -181,7 +205,7 @@ const InviteCodeManage = observer(() => {
                     message.success('创建成功');
                     setIsCreateModalVisible(false);
                     createForm.resetFields();
-                    fetchList();
+                    fetchList(pagination, form.getFieldsValue());
                 })
                 .catch(err => {
                     console.error('Create failed', err);
@@ -255,13 +279,24 @@ const InviteCodeManage = observer(() => {
             },
         },
         { title: '学校名', dataIndex: 'school_name', key: 'school_name', ellipsis: true },
-        { title: '创建人', dataIndex: 'creator_name', key: 'creator_name', ellipsis: true },
+        {
+            title: '学院名',
+            dataIndex: 'college_name',
+            key: 'college_name',
+            width: 140,
+            ellipsis: true,
+            render: (val) => val || '-',
+        },
         { title: '年级', dataIndex: 'grade', key: 'grade', width: 100 },
+        { title: '创建人', dataIndex: 'creator_name', key: 'creator_name', ellipsis: true },
         {
             title: '创建时间',
             dataIndex: 'create_time',
             key: 'create_time',
-            width: 160,
+            width: 180,
+            sorter: (a, b) => Number(a?.create_time || 0) - Number(b?.create_time || 0),
+            defaultSortOrder: 'descend',
+            sortDirections: ['descend', 'ascend'],
             render: (val) => moment.unix(val).format('YYYY-MM-DD HH:mm:ss'),
         },
         {
@@ -297,11 +332,20 @@ const InviteCodeManage = observer(() => {
                             <Input placeholder="学校ID" allowClear />
                         </Form.Item>
                     )}
-                    <Form.Item name="class_id" label="班级ID">
-                        <Input placeholder="输入班级ID" allowClear />
+                    <Form.Item name="college_id" label="学院ID">
+                        <Input placeholder="输入学院ID" allowClear />
+                    </Form.Item>
+                    <Form.Item name="collegeName" label="学院名">
+                        <Input placeholder="输入学院名" allowClear />
                     </Form.Item>
                     <Form.Item name="grade" label="年级">
                         <Input placeholder="输入年级" allowClear />
+                    </Form.Item>
+                    <Form.Item name="status" label="状态" style={{ width: 140 }}>
+                        <Select placeholder="选择状态" allowClear>
+                            <Option value={1}>有效</Option>
+                            <Option value={0}>无效</Option>
+                        </Select>
                     </Form.Item>
                     <Form.Item name="type" label="类型" style={{ width: 180 }}>
                         <Select placeholder="选择类型" allowClear>
@@ -321,27 +365,21 @@ const InviteCodeManage = observer(() => {
             </div>
 
             <div className="table-wrapper">
-                {isPlatformAdmin && !data.length && !loading ? (
-                    <div style={{ padding: '40px', textAlign: 'center', color: '#888' }}>
-                        请在上方输入学校ID进行查询
-                    </div>
-                ) : (
-                    <Table
-                        columns={columns}
-                        dataSource={data}
-                        rowKey="code"
-                        loading={loading}
-                        pagination={{
-                            current: pagination.current,
-                            pageSize: pagination.pageSize,
-                            total,
-                            showSizeChanger: true,
-                            showTotal: (total) => `共 ${total} 条记录`,
-                        }}
-                        onChange={handleTableChange}
-                        scroll={{ x: 'max-content' }}
-                    />
-                )}
+                <Table
+                    columns={columns}
+                    dataSource={data}
+                    rowKey="code"
+                    loading={loading}
+                    pagination={{
+                        current: pagination.current,
+                        pageSize: pagination.pageSize,
+                        total,
+                        showSizeChanger: true,
+                        showTotal: (total) => `共 ${total} 条记录`,
+                    }}
+                    onChange={handleTableChange}
+                    scroll={{ x: 'max-content' }}
+                />
             </div>
 
             <Modal
@@ -365,11 +403,48 @@ const InviteCodeManage = observer(() => {
                             <Input placeholder="输入学校ID" />
                         </Form.Item>
                     )}
-                    <Form.Item name="grade" label="所属年级 (选填)">
-                        <Input placeholder="例如: 2023" />
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prevValues, curValues) => prevValues.type !== curValues.type}
+                    >
+                        {({ getFieldValue }) => {
+                            const inviteType = getFieldValue('type');
+
+                            if (inviteType === 0 || inviteType === 1) {
+                                return (
+                                    <Form.Item
+                                        name="college_id"
+                                        label="学院ID"
+                                        preserve={false}
+                                        rules={[{ required: true, message: '请输入学院ID' }]}
+                                    >
+                                        <Input placeholder="请输入学院ID" />
+                                    </Form.Item>
+                                );
+                            }
+
+                            return null;
+                        }}
                     </Form.Item>
-                    <Form.Item name="class_id" label="所属班级ID (选填)">
-                        <Input placeholder="例如: class-101" />
+                    <Form.Item
+                        noStyle
+                        shouldUpdate={(prevValues, curValues) => prevValues.type !== curValues.type}
+                    >
+                        {({ getFieldValue }) => {
+                            if (getFieldValue('type') !== 1) {
+                                return null;
+                            }
+                            return (
+                                <Form.Item
+                                    name="grade"
+                                    label="所属年级"
+                                    preserve={false}
+                                    rules={[{ required: true, message: '学生加入学校类型必须填写年级' }]}
+                                >
+                                    <Input placeholder="例如: 2023" />
+                                </Form.Item>
+                            );
+                        }}
                     </Form.Item>
                     <Form.Item
                         noStyle
@@ -381,12 +456,12 @@ const InviteCodeManage = observer(() => {
                             }
                             return (
                                 <Form.Item
-                                    name="course_id"
-                                    label="所属课程ID"
+                                    name="teaching_group_id"
+                                    label="教学组ID"
                                     preserve={false}
-                                    rules={[{ required: true, message: '课程邀请码必须填写课程ID' }]}
+                                    rules={[{ required: true, message: '学生加入课程类型必须填写教学组ID' }]}
                                 >
-                                    <Input placeholder="请输入课程ID（字符串）" />
+                                    <Input placeholder="请输入教学组ID" />
                                 </Form.Item>
                             );
                         }}

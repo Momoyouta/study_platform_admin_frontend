@@ -33,6 +33,12 @@ const menuConfig = [
                 roles: ['root', 'admin']
             },
             {
+                key: 'college-manage',
+                label: '学院管理',
+                path: '/school-manage/college-manage',
+                roles: ['root', 'admin', 'school_root', 'school_admin']
+            },
+            {
                 key: 'school-approval',
                 label: '学校审批',
                 path: '/school-manage/school-approval',

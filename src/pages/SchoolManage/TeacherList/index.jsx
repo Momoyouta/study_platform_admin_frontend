@@ -1,6 +1,6 @@
 import { observer } from 'mobx-react-lite';
 import { Form, Input, Select, Button, Table, Space, Tag, message } from 'antd';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { getTeacherList, updateTeacher } from '@/http/api.ts';
 import { SchoolStatusMap } from '@/type/map.js';
 import Store from '@/store/index.ts';
@@ -24,7 +24,7 @@ const TeacherList = observer(() => {
     const isPlatformAdmin = currentUserRoles.includes('root') || currentUserRoles.includes('admin');
     const mySchoolId = Store.UserStore.userBaseInfo?.schoolId;
 
-    const fetchList = (pageParams = pagination, searchParams = form.getFieldsValue()) => {
+    const fetchList = useCallback((pageParams, searchParams) => {
         setLoading(true);
         const params = {
             page: pageParams.current,
@@ -57,11 +57,11 @@ const TeacherList = observer(() => {
             .finally(() => {
                 setLoading(false);
             });
-    };
+    }, [isPlatformAdmin, mySchoolId]);
 
     useEffect(() => {
-        fetchList();
-    }, []);
+        fetchList({ current: 1, pageSize: 10 }, form.getFieldsValue());
+    }, [fetchList, form]);
 
     const onSearch = (values) => {
         const newPagination = { ...pagination, current: 1 };
@@ -76,20 +76,53 @@ const TeacherList = observer(() => {
 
     const handleTableChange = (newPagination) => {
         setPagination(newPagination);
-        fetchList(newPagination);
+        fetchList(newPagination, form.getFieldsValue());
+    };
+
+    const getTeacherCollegeName = (record) => {
+        return record?.collegeName || record?.college_name || record?.colleageName || record?.colleage_name || '-';
+    };
+
+    const getTeacherCollegeId = (record) => {
+        return record?.college_id || record?.collegeId || record?.colleage_id || record?.colleageId || '';
+    };
+
+    const getTeacherApiId = (record) => {
+        return record?.teacher_id || record?.teacherId || record?.id || record?.userId;
     };
 
     const handleEdit = (record) => {
-        setEditingUser(record);
+        setEditingUser({
+            ...record,
+            college_id: getTeacherCollegeId(record),
+        });
         setIsModalVisible(true);
     };
 
     const handleEditSubmit = async (payload) => {
         try {
-            await updateTeacher(editingUser.id || editingUser.userId, payload);
+            const endpointId = getTeacherApiId(editingUser);
+            if (!endpointId) {
+                message.error('未找到教师ID');
+                return;
+            }
+
+            const schoolId = editingUser?.school_id ?? editingUser?.schoolId ?? mySchoolId;
+            const teacherId =
+                editingUser?.teacher_id ??
+                editingUser?.teacherId ??
+                editingUser?.id ??
+                editingUser?.userId;
+
+            const editPayload = {
+                ...payload,
+                school_id: schoolId,
+            };
+
+            await updateTeacher(endpointId, editPayload);
             message.success('更新成功');
             setIsModalVisible(false);
-            fetchList();
+            fetchList(pagination, form.getFieldsValue());
         } catch (err) {
             console.error('Update failed', err);
             message.error('信息更新失败');
@@ -98,10 +131,16 @@ const TeacherList = observer(() => {
     };
 
     const handleStatusChange = (record, status) => {
-        updateTeacher(record.id || record.userId, { status })
+        const endpointId = getTeacherApiId(record);
+        if (!endpointId) {
+            message.error('未找到教师ID');
+            return;
+        }
+
+        updateTeacher(endpointId, { status })
             .then(() => {
                 message.success('状态更新成功');
-                fetchList();
+                fetchList(pagination, form.getFieldsValue());
             })
             .catch(error => {
                 console.error('Status update failed', error);
@@ -152,15 +191,10 @@ const TeacherList = observer(() => {
             render: (text) => text || '-',
         },
         {
-            title: '所属机构',
-            key: 'organization',
-            width: 120,
-            render: (_, record) => {
-                if (!record.school_id || record.school_id === '0' || record.school_id === '') {
-                    return <Tag color="geekblue">平台</Tag>;
-                }
-                return <Tag color="cyan">学校</Tag>;
-            },
+            title: '学院',
+            key: 'collegeName',
+            width: 140,
+            render: (_, record) => getTeacherCollegeName(record),
         },
         {
             title: '性别',
@@ -266,9 +300,12 @@ const TeacherList = observer(() => {
                 record={editingUser}
                 onSubmit={handleEditSubmit}
                 onCancel={() => setIsModalVisible(false)}
-                extraFields={[{ name: 'teacher_number', label: '工号', placeholder: '请输入工号' }]}
+                extraFields={[
+                    { name: 'teacher_number', label: '工号', placeholder: '请输入工号' },
+                    { name: 'college_id', label: '学院ID', placeholder: '请输入学院ID' },
+                ]}
                 avatarFieldKey="avatar"
-                note="*注：ID、账号、归属机构等关键信息不可通过普通编辑接口修改。"
+                note="*注：ID、账号等关键信息不可通过普通编辑接口修改。支持编辑工号、学院ID。"
             />
         </div>
     );
