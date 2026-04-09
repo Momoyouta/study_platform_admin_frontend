@@ -25,6 +25,7 @@ import {
     getPlatformSchoolFunnel,
     getPlatformSchoolTotal,
     getPlatformStorageUsage,
+    getSchoolGradeSummary,
     getPlatformUserTotal,
     getSchoolAssetSummary,
     getSchoolCourseSummary,
@@ -36,7 +37,7 @@ import './index.less';
 const { Title, Text } = Typography;
 
 const PLATFORM_SECTION_KEYS = ['schoolFunnel', 'schoolTotal', 'userTotal', 'storageUsage', 'courseSummary'];
-const SCHOOL_SECTION_KEYS = ['peopleSummary', 'courseSummary', 'assetSummary', 'learningSummary'];
+const SCHOOL_SECTION_KEYS = ['peopleSummary', 'courseSummary', 'assetSummary', 'learningSummary', 'gradeSummary'];
 
 const createSectionState = (keys) => {
     return keys.reduce((acc, key) => {
@@ -152,6 +153,10 @@ const Dashboard = observer(() => {
     const [rangeDays, setRangeDays] = useState(30);
     const [schoolInputId, setSchoolInputId] = useState('');
     const [schoolQueryId, setSchoolQueryId] = useState('');
+    const [gradeInput, setGradeInput] = useState('');
+    const [gradeQuery, setGradeQuery] = useState('');
+    const [collegeInputId, setCollegeInputId] = useState('');
+    const [collegeQueryId, setCollegeQueryId] = useState('');
 
     const [platformSections, setPlatformSections] = useState(() => createSectionState(PLATFORM_SECTION_KEYS));
     const [schoolSections, setSchoolSections] = useState(() => createSectionState(SCHOOL_SECTION_KEYS));
@@ -170,6 +175,18 @@ const Dashboard = observer(() => {
             ...(isPlatformRole && schoolQueryId ? { schoolId: schoolQueryId } : {}),
         };
     }, [isPlatformRole, schoolQueryId, timeParams]);
+
+    const gradeSummaryParams = useMemo(() => {
+        if (!gradeQuery) {
+            return null;
+        }
+
+        return {
+            ...schoolParams,
+            grade: gradeQuery,
+            ...(collegeQueryId ? { collegeId: collegeQueryId } : {}),
+        };
+    }, [collegeQueryId, gradeQuery, schoolParams]);
 
     const updatePlatformSection = useCallback((key, patch) => {
         setPlatformSections((prev) => ({
@@ -295,6 +312,15 @@ const Dashboard = observer(() => {
         );
     }, [loadSection, updateSchoolSection]);
 
+    const fetchSchoolGradeSummary = useCallback((params) => {
+        return loadSection(
+            updateSchoolSection,
+            'gradeSummary',
+            () => getSchoolGradeSummary(params),
+            '加载年级统计失败'
+        );
+    }, [loadSection, updateSchoolSection]);
+
     const fetchPlatformOverview = useCallback((params) => {
         return Promise.all([
             fetchPlatformSchoolFunnel(params),
@@ -336,6 +362,34 @@ const Dashboard = observer(() => {
         }
         fetchSchoolOverview(schoolParams);
     }, [activeView, fetchSchoolOverview, isPlatformRole, schoolParams, schoolQueryId]);
+
+    useEffect(() => {
+        if (activeView !== 'school') {
+            return;
+        }
+
+        if (isPlatformRole && !schoolQueryId) {
+            return;
+        }
+
+        if (!gradeSummaryParams) {
+            updateSchoolSection('gradeSummary', {
+                loading: false,
+                error: '',
+                data: null,
+            });
+            return;
+        }
+
+        fetchSchoolGradeSummary(gradeSummaryParams);
+    }, [
+        activeView,
+        fetchSchoolGradeSummary,
+        gradeSummaryParams,
+        isPlatformRole,
+        schoolQueryId,
+        updateSchoolSection,
+    ]);
 
     const schoolFunnelData = useMemo(() => {
         const source = platformSections.schoolFunnel.data;
@@ -469,9 +523,36 @@ const Dashboard = observer(() => {
         setSchoolQueryId(nextSchoolId);
     };
 
+    const handleApplyGradeSummary = () => {
+        const nextGrade = gradeInput.trim();
+        if (!nextGrade) {
+            message.warning('请先输入年级再查询统计');
+            return;
+        }
+
+        setGradeQuery(nextGrade);
+        setCollegeQueryId(collegeInputId.trim());
+    };
+
+    const handleClearGradeSummaryFilter = () => {
+        setGradeInput('');
+        setGradeQuery('');
+        setCollegeInputId('');
+        setCollegeQueryId('');
+        updateSchoolSection('gradeSummary', {
+            loading: false,
+            error: '',
+            data: null,
+        });
+    };
+
     const handleClearSchoolFilter = () => {
         setSchoolInputId('');
         setSchoolQueryId('');
+        setGradeInput('');
+        setGradeQuery('');
+        setCollegeInputId('');
+        setCollegeQueryId('');
         setSchoolSections(createSectionState(SCHOOL_SECTION_KEYS));
     };
 
@@ -487,6 +568,10 @@ const Dashboard = observer(() => {
         }
 
         fetchSchoolOverview(schoolParams);
+
+        if (gradeSummaryParams) {
+            fetchSchoolGradeSummary(gradeSummaryParams);
+        }
     };
 
     const platformSchoolTotal = platformSections.schoolTotal.data?.schoolTotal || 0;
@@ -496,6 +581,7 @@ const Dashboard = observer(() => {
     const schoolCourseSummary = schoolSections.courseSummary.data;
     const schoolAssetSummary = schoolSections.assetSummary.data;
     const schoolLearningSummary = schoolSections.learningSummary.data;
+    const schoolGradeSummary = schoolSections.gradeSummary.data;
 
     const platformView = (
         <Row gutter={[16, 16]}>
@@ -743,6 +829,77 @@ const Dashboard = observer(() => {
                                     />
                                 </Col>
                             </Row>
+                        </SectionCard>
+                    </Col>
+
+                    <Col xs={24}>
+                        <SectionCard
+                            title="年级统计"
+                            loading={schoolSections.gradeSummary.loading}
+                            error={schoolSections.gradeSummary.error}
+                            onRetry={gradeSummaryParams ? () => fetchSchoolGradeSummary(gradeSummaryParams) : undefined}
+                        >
+                            <div className="dashboard-grade-filter">
+                                <Space wrap>
+                                    <Input
+                                        allowClear
+                                        value={gradeInput}
+                                        placeholder="请输入年级，如 2023"
+                                        onChange={(event) => setGradeInput(event.target.value)}
+                                        onPressEnter={handleApplyGradeSummary}
+                                    />
+                                    <Input
+                                        allowClear
+                                        value={collegeInputId}
+                                        placeholder="请输入学院ID（可选）"
+                                        onChange={(event) => setCollegeInputId(event.target.value)}
+                                        onPressEnter={handleApplyGradeSummary}
+                                    />
+                                    <Button type="primary" onClick={handleApplyGradeSummary}>
+                                        查询年级统计
+                                    </Button>
+                                    <Button onClick={handleClearGradeSummaryFilter}>清空</Button>
+                                </Space>
+                            </div>
+
+                            {!gradeQuery ? (
+                                <div className="dashboard-grade-empty">
+                                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="请输入年级后查看统计数据" />
+                                </div>
+                            ) : !schoolGradeSummary ? (
+                                <div className="dashboard-grade-empty">
+                                    <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="暂无该年级统计数据" />
+                                </div>
+                            ) : (
+                                <Row gutter={[16, 16]}>
+                                    <Col xs={24} md={6}>
+                                        <Statistic
+                                            title="年级平均分"
+                                            value={Number(schoolGradeSummary?.avgScore || 0)}
+                                            precision={2}
+                                        />
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                        <Statistic
+                                            title="作业提交率"
+                                            value={normalizeRatioPercent(schoolGradeSummary?.submissionRate || 0)}
+                                            precision={2}
+                                            suffix="%"
+                                        />
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                        <Statistic
+                                            title="平均课程进度"
+                                            value={normalizeRatioPercent(schoolGradeSummary?.avgProgress || 0)}
+                                            precision={2}
+                                            suffix="%"
+                                        />
+                                    </Col>
+                                    <Col xs={24} md={6}>
+                                        <Statistic title="激活学生人数" value={formatCount(schoolGradeSummary?.studentCount || 0)} />
+                                    </Col>
+                                </Row>
+                            )}
                         </SectionCard>
                     </Col>
                 </Row>

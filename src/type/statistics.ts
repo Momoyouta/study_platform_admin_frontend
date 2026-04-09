@@ -7,6 +7,11 @@ export type SchoolStatisticsQueryParams = StatisticsQueryParams & {
     schoolId?: string;
 };
 
+export type GradeSummaryQueryParams = SchoolStatisticsQueryParams & {
+    grade: string;
+    collegeId?: string;
+};
+
 export type SchoolFunnelDto = {
     totalApply: number;
     approved: number;
@@ -57,4 +62,11 @@ export type LearningSummaryDto = {
     avgProgressPercent: number;
     assignmentSubmitRate: number;
     avgScoreRate: number;
+};
+
+export type GradeSummaryDto = {
+    avgScore: number;
+    submissionRate: number;
+    avgProgress: number;
+    studentCount: number;
 };

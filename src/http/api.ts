@@ -39,6 +39,8 @@ import type {
 import type {
     AssetSummaryDto,
     CourseSummaryDto,
+    GradeSummaryDto,
+    GradeSummaryQueryParams,
     LearningSummaryDto,
     PeopleSummaryDto,
     PlatformSchoolTotalDto,
@@ -445,6 +447,10 @@ export const getSchoolAssetSummary = (params: SchoolStatisticsQueryParams = {}) 
 
 export const getSchoolLearningSummary = (params: SchoolStatisticsQueryParams = {}) => {
     return http.get('/school/statistics/learning-summary', { params }) as Promise<ApiResult<LearningSummaryDto>>;
+}
+
+export const getSchoolGradeSummary = (params: GradeSummaryQueryParams) => {
+    return http.get('/school/statistics/grade-summary', { params }) as Promise<ApiResult<GradeSummaryDto>>;
 }
 
 // ================= 额外补充 =================
